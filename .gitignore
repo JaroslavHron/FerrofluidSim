@@ -1,1 +1,4 @@
 results/
+.idea/
+*.pvd
+*.vtu
