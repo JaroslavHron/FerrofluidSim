@@ -1,4 +1,3 @@
-
 #
 # Advekcna rovnica
 #
@@ -7,26 +6,27 @@
 from dolfin import *
 import numpy as np
 
-# Subory na ulozenie vysledkov
-lsfile = File("ls.pvd")
-
 # Mriezka a priestory funkcii
-m = 20
+# rozmer mriezky
+m = 100
 mesh = UnitSquareMesh(m, m)
-V = FunctionSpace(mesh, "Lagrange", 1)
+V = FunctionSpace(mesh, "CG", 1)
 W = VectorFunctionSpace(mesh, 'DG', 0)
 
 
 # Konstanty advekcie
-dt = 0.005
-T = 0.1
-r = Constant((0.0, 0.5))
+dt = 0.01
+T = 1
+# konstantne vektorove pole
+r = Constant((0.0, 1.0))
 
 # Konstanty reinicializacie
 d = 0
 dtau = pow(1/float(m), 1+d)/2  # Olsson Kreiss --> dtau = ((dx)^(1+d))/2
 eps = pow(1/float(m), 1-d)/2  # Olsson Kreiss --> eps = ((dx)^(1-d))/2
-Tau = 0.5
+eps_init = 0.02
+Tau = 1
+norm_eps = 0.2
 
 
 # Hranice vypoc. oblasti
@@ -49,30 +49,30 @@ def right_boundary(x):
 # Hranicne podmienky
 bc_bottom = DirichletBC(V, Constant(0.0), bottom_boundary)
 bc_top = DirichletBC(V, Constant(0.0), top_boundary)
-bc_left = DirichletBC(V, Constant(0.0),left_boundary)
+bc_left = DirichletBC(V, Constant(0.0), left_boundary)
 bc_right = DirichletBC(V, Constant(0.0), right_boundary)
 
-
-u = TrialFunction(V)
-v = TestFunction(V)
+# trial a test funkcie
+# level-set
+phi = TrialFunction(V)
+phi_t = TestFunction(V)
 
 # normalove pole na priestore vektorov W
 n = Function(W)
-# skalarne pole velkosti normal
-n_norm = Function(V)
 
-u0 = Function(V)
-u1 = Function(V)
+# funkcie vysledkov
+phi0 = Function(V)
+phi1 = Function(V)
 
 # Pociatocna podmienka
-begin("Projekcia pociatocneho level setu")
-u_0 = Expression("1/( 1+exp( ( sqrt( (x[0]-0.3)*(x[0]-0.3) + (x[1]-0.3)*(x[1]-0.3) )-0.2 )/{0}) )".format(eps))
-u0.assign(interpolate(u_0, V))
-end()
+print "Projekcia pociatocneho level setu"
+phi_init = Expression("1/( 1+exp((sqrt((x[0]-0.3)*(x[0]-0.3)+(x[1]-0.3)*(x[1]-0.3))-0.2)/{0}))".format(eps_init))
+phi0.assign(interpolate(phi_init, V))
+
 
 # Implicit Euler Variacna formulacia 
-a = dt*inner(dot(r,grad(u)),v)*dx + inner(u,v)*dx
-L = inner(u0,v)*dx
+a = dt*inner(dot(r, grad(phi)), phi_t)*dx + inner(phi, phi_t)*dx
+L = inner(phi0, phi_t)*dx
 
 # Explicit Euler variacna formulacia
 #a = inner(u,v)*dx
@@ -86,54 +86,50 @@ L = inner(u0,v)*dx
 A = assemble(a)
 
 t = dt
-plot(u0, interactive=True)
-# Hlavny casovy krok
+### ADVEKCIA
 while t < T + DOLFIN_EPS:
-    begin("Pocitanie transportu")
-    print("t = {}".format(t))
+    print "Pocitanie transportu"
+    print "t = {}".format(t)
     b = assemble(L)
     [bc.apply(A, b) for bc in [bc_bottom, bc_left, bc_top, bc_right]]
-    solve(A, u1.vector(), b)
-    end()
+    solve(A, phi1.vector(), b)
 
-    u0.assign(u1)
+    phi0.assign(phi1)
 
-    # Reinicializacny casovy krok
+    ### REINICIALIZACIA
     tau = dtau
 
     # vypocet normaloveho pola
-    plot(u0, interactive=True)
-    gu = grad(u0)
+    plot(phi0)
+    gu = grad(phi0)
 
-    cond = conditional(gt(sqrt(dot(gu,gu)), 0.01),-gu/sqrt(dot(gu,gu)), Constant((0,0)) )
-    n.assign( project(cond, W) )
-    plot(conditional(gt(sqrt(dot(gu,gu)), 0.01), sqrt(dot(gu,gu)), 0 ), interactive=True)
+    # cond = conditional(gt(phi0, 0.05), gu/sqrt(dot(gu, gu)), Constant((0, 0)))
+    cond = conditional(lt(phi0, 0.05), 1, 0)
+    # condn = conditional(gt(sqrt(dot(gu, gu)), 0.1), gu/sqrt(dot(gu, gu)), Constant((0, 0)))
+    print "Projektujem normalu"
+    # n.assign(project(cond*condn, W))
+    n.assign(project(gu/sqrt(pow(norm_eps,2)+dot(gu, gu)), W))
+    plot(n)
 
     while tau < Tau + DOLFIN_EPS:
-        print("Pocitam reinicializaciu, tau = {0}".format(tau))
+        print "Pocitam reinicializaciu, tau = {0}".format(tau)
 
         # Crack Nicholson reinicializacia
-        a_r = inner(u,v)*dx-dtau/2.0*inner(u,dot(grad(v),n))*dx+eps*dtau/2.0*inner(dot(grad(u),n),dot(grad(v),n))*dx+eps*dtau*inner(u*u0,dot(grad(v),n))*dx
-        L_r = inner(u0,v)*dx+dtau/2.0*inner(u0,dot(grad(v),n))*dx-eps*dtau/2.0*inner(dot(grad(u0),n),dot(grad(v),n))*dx
+        a_r = inner(phi, phi_t)*dx-dtau/2.0*inner(phi, dot(grad(phi_t), n))*dx+ \
+              eps*dtau/2.0*inner(dot(grad(phi), n), dot(grad(phi_t), n))*dx+eps*dtau*inner(phi*phi0, dot(grad(phi_t), n))*dx
+        L_r = inner(phi0, phi_t)*dx+dtau/2.0*inner(phi0, dot(grad(phi_t), n))*dx- \
+              eps*dtau/2.0*inner(dot(grad(phi0), n), dot(grad(phi_t), n))*dx
         A_r = assemble(a_r)
         b_r = assemble(L_r)
 
-        solve(A_r, u1.vector(), b_r)
-        u0.assign(u1)
+        solve(A_r, phi1.vector(), b_r)
+        phi0.assign(phi1)
         tau += dtau
-        plot(u0)
+        plot(phi0)
 
-    #plot(n)
     t += dt
+    plot(phi0)
 
-    #plot(u0)
-
-    #try:
-    #	response = raw_input('Prompt: ')
-    #except:
-    #	print ''
-
-    lsfile << u1
 
 
 
