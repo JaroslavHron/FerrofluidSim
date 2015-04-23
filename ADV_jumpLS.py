@@ -2,6 +2,8 @@
 # Advekcna rovnica
 #
 # Author michal.habera@gmail.com
+#
+# TODO normaly cez FEM prenasobenim grad(phi)
 
 from dolfin import *
 import numpy as np
@@ -23,10 +25,10 @@ r = Constant((0.0, 1.0))
 # Konstanty reinicializacie
 d = 0
 dtau = pow(1/float(m), 1+d)/2  # Olsson Kreiss --> dtau = ((dx)^(1+d))/2
-eps = pow(1/float(m), 1-d)/2  # Olsson Kreiss --> eps = ((dx)^(1-d))/2
+eps =  pow(1/float(m), 1-d)/2  # Olsson Kreiss --> eps = ((dx)^(1-d))/2
 eps_init = 0.02
-Tau = 1
-norm_eps = 0.2
+Tau = 2
+norm_eps = 0.01
 
 
 # Hranice vypoc. oblasti
@@ -56,6 +58,7 @@ bc_right = DirichletBC(V, Constant(0.0), right_boundary)
 # level-set
 phi = TrialFunction(V)
 phi_t = TestFunction(V)
+phi_reinit = Function(V)
 
 # normalove pole na priestore vektorov W
 n = Function(W)
@@ -73,6 +76,8 @@ phi0.assign(interpolate(phi_init, V))
 # Implicit Euler Variacna formulacia 
 a = dt*inner(dot(r, grad(phi)), phi_t)*dx + inner(phi, phi_t)*dx
 L = inner(phi0, phi_t)*dx
+
+
 
 # Explicit Euler variacna formulacia
 #a = inner(u,v)*dx
@@ -104,28 +109,39 @@ while t < T + DOLFIN_EPS:
     gu = grad(phi0)
 
     # cond = conditional(gt(phi0, 0.05), gu/sqrt(dot(gu, gu)), Constant((0, 0)))
-    cond = conditional(lt(phi0, 0.05), 1, 0)
+    # cond = conditional(lt(phi0, 0.05), 1, 0)
     # condn = conditional(gt(sqrt(dot(gu, gu)), 0.1), gu/sqrt(dot(gu, gu)), Constant((0, 0)))
     print "Projektujem normalu"
     # n.assign(project(cond*condn, W))
-    n.assign(project(gu/sqrt(pow(norm_eps,2)+dot(gu, gu)), W))
+    n.assign(project(gu/sqrt(pow(norm_eps, 2)+dot(gu, gu)), W))
     plot(n)
 
     while tau < Tau + DOLFIN_EPS:
         print "Pocitam reinicializaciu, tau = {0}".format(tau)
 
         # Crack Nicholson reinicializacia
-        a_r = inner(phi, phi_t)*dx-dtau/2.0*inner(phi, dot(grad(phi_t), n))*dx+ \
-              eps*dtau/2.0*inner(dot(grad(phi), n), dot(grad(phi_t), n))*dx+eps*dtau*inner(phi*phi0, dot(grad(phi_t), n))*dx
-        L_r = inner(phi0, phi_t)*dx+dtau/2.0*inner(phi0, dot(grad(phi_t), n))*dx- \
-              eps*dtau/2.0*inner(dot(grad(phi0), n), dot(grad(phi_t), n))*dx
-        A_r = assemble(a_r)
-        b_r = assemble(L_r)
+        # a_r = inner(phi, phi_t)*dx-dtau/2.0*inner(phi, dot(grad(phi_t), n))*dx+ \
+        #       eps*dtau/2.0*inner(grad(phi), grad(phi_t))*dx+eps*dtau*inner(phi*phi0, dot(grad(phi_t), n))*dx
+        # L_r = inner(phi0, phi_t)*dx+dtau/2.0*inner(phi0, dot(grad(phi_t), n))*dx- \
+        #       eps*dtau/2.0*inner(grad(phi0), grad(phi_t))*dx
+        # A_r = assemble(a_r)
+        # b_r = assemble(L_r)
+        #
+        # solve(A_r, phi1.vector(), b_r)
 
-        solve(A_r, phi1.vector(), b_r)
-        phi0.assign(phi1)
+        # Implicit Euler reinicializacia
+        F = 1/dtau*inner(phi_reinit-phi0, phi_t)*dx-inner(phi_reinit*(1-phi_reinit), dot(grad(phi_t), n))*dx+eps*inner(grad(phi_reinit), grad(phi_t))*dx
+        solve(F == 0, phi_reinit, [])
+
+        phi0.assign(phi_reinit)
+
+        print "Norma {0}".format(norm(assemble(F), "L2"))
+
         tau += dtau
-        plot(phi0)
+        plot(phi_reinit)
+
+        if norm(assemble(F), "L2") < 0.001:
+            break
 
     t += dt
     plot(phi0)
