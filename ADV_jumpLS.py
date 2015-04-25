@@ -8,19 +8,21 @@
 from dolfin import *
 import numpy as np
 
+lsfile = File("results/ADV_jumpLS_ls.pvd")
+
 # Mriezka a priestory funkcii
 # rozmer mriezky
 m = 100
 mesh = UnitSquareMesh(m, m)
 V = FunctionSpace(mesh, "CG", 1)
-W = VectorFunctionSpace(mesh, 'DG', 0)
+W = VectorFunctionSpace(mesh, 'CG', 1)
 
 
 # Konstanty advekcie
-dt = 0.01
+dt = 0.02
 T = 1
 # konstantne vektorove pole
-r = Constant((0.0, 1.0))
+r = Expression(("sin(pi*x[0])*sin(pi*x[0])*sin(2*pi*x[1])", "-sin(pi*x[1])*sin(pi*x[1])*sin(2*pi*x[0])"))
 
 # Konstanty reinicializacie
 d = 0
@@ -28,7 +30,7 @@ dtau = pow(1/float(m), 1+d)/2  # Olsson Kreiss --> dtau = ((dx)^(1+d))/2
 eps =  pow(1/float(m), 1-d)/2  # Olsson Kreiss --> eps = ((dx)^(1-d))/2
 eps_init = 0.02
 Tau = 2
-norm_eps = 0.01
+norm_eps = 0.00001
 
 
 # Hranice vypoc. oblasti
@@ -145,6 +147,7 @@ while t < T + DOLFIN_EPS:
 
     t += dt
     plot(phi0)
+    lsfile << phi0
 
 
 
