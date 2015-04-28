@@ -1,39 +1,41 @@
 #
-# Advekcna rovnica
+# Advection equation
 #
 # Author michal.habera@gmail.com
 #
-# TODO normaly cez FEM prenasobenim grad(phi)
 
 from dolfin import *
 import numpy as np
+import time
+from termcolor import colored
+
+start_global = time.time()
 
 lsfile = File("results/ADV_jumpLS_ls.pvd")
 
-# Mriezka a priestory funkcii
-# rozmer mriezky
-m = 100
+# Mesh and function spaces
+# mesh dimension
+m = 30
 mesh = UnitSquareMesh(m, m)
 V = FunctionSpace(mesh, "CG", 1)
-W = VectorFunctionSpace(mesh, 'CG', 1)
+W = VectorFunctionSpace(mesh, "CG", 1)
 
-
-# Konstanty advekcie
+# advection constants
 dt = 0.02
 T = 1
-# konstantne vektorove pole
+# time independent vector field
 r = Expression(("sin(pi*x[0])*sin(pi*x[0])*sin(2*pi*x[1])", "-sin(pi*x[1])*sin(pi*x[1])*sin(2*pi*x[0])"))
 
-# Konstanty reinicializacie
+# reinitialization constants
 d = 0
 dtau = pow(1/float(m), 1+d)/2  # Olsson Kreiss --> dtau = ((dx)^(1+d))/2
-eps =  pow(1/float(m), 1-d)/2  # Olsson Kreiss --> eps = ((dx)^(1-d))/2
-eps_init = 0.02
+eps = pow(1/float(m), 1-d)/2  # Olsson Kreiss --> eps = ((dx)^(1-d))/2
 Tau = 2
+# stationary state of LS, definition
 norm_eps = 0.00001
 
 
-# Hranice vypoc. oblasti
+# boundaries
 def bottom_boundary(x):
     return np.isclose(x[0], 0.0)
 
@@ -50,105 +52,114 @@ def right_boundary(x):
     return np.isclose(x[1], 1.0)
 
 
-# Hranicne podmienky
+# boundary conditions
 bc_bottom = DirichletBC(V, Constant(0.0), bottom_boundary)
 bc_top = DirichletBC(V, Constant(0.0), top_boundary)
 bc_left = DirichletBC(V, Constant(0.0), left_boundary)
 bc_right = DirichletBC(V, Constant(0.0), right_boundary)
 
-# trial a test funkcie
+# trial and test functions
 # level-set
 phi = TrialFunction(V)
 phi_t = TestFunction(V)
-phi_reinit = Function(V)
 
-# normalove pole na priestore vektorov W
+# normal field
 n = Function(W)
 
-# funkcie vysledkov
+# results functions
 phi0 = Function(V)
 phi1 = Function(V)
+phi_reinit = Function(V)
 
-# Pociatocna podmienka
-print "Projekcia pociatocneho level setu"
-phi_init = Expression("1/( 1+exp((sqrt((x[0]-0.3)*(x[0]-0.3)+(x[1]-0.3)*(x[1]-0.3))-0.2)/{0}))".format(eps_init))
+
+# initial condition
+print colored("Projecting initial level set...", "red")
+start_ls_init = time.time()
+phi_init = Expression("1/( 1+exp((sqrt((x[0]-0.3)*(x[0]-0.3)+(x[1]-0.3)*(x[1]-0.3))-0.2)/{0}))".format(eps))
 phi0.assign(interpolate(phi_init, V))
+print colored("Projection time: {:.3f}s.".format(time.time()-start_ls_init), "blue")
 
 
-# Implicit Euler Variacna formulacia 
-a = dt*inner(dot(r, grad(phi)), phi_t)*dx + inner(phi, phi_t)*dx
-L = inner(phi0, phi_t)*dx
+def get_adv_forms(_phi, _phi_t, _phi0, _schema="implicit_euler", _dt=0.1, _r=Constant((0, 0))):
+    """ Returns tuple of multilinear forms for advection equation.
+    Bilinear and linear form respectively.
+    """
+    if _schema == "implicit_euler":
+        return (
+            _dt*inner(dot(_r, grad(_phi)), _phi_t)*dx + inner(_phi, _phi_t)*dx,
+            inner(_phi0, _phi_t)*dx
+        )
+    elif _schema == "explicit_euler":
+        return (
+            inner(_phi, _phi_t)*dx,
+            inner(_phi0, _phi_t)*dx+_dt*inner(_phi0, dot(grad(_phi_t), _r))*dx
+        )
+    elif _schema == "crank_nicholson":
+        return (
+            inner(_phi, _phi_t)*dx-_dt/2.0*inner(_phi, dot(grad(_phi_t), _r))*dx,
+            inner(_phi0, _phi_t)*dx+_dt/2.0*inner(_phi0, dot(grad(_phi_t), _r))*dx
+        )
+    else:
+        raise ValueError("Unknown numerical scheme {scheme_name}!".format(scheme_name=_schema))
 
 
+def get_reinit_forms(_phi, _phi_t, _phi0, _schema="implicit_euler", _dt=0.1, _eps=0.1, _n=Constant((0, 0))):
+    """ Returns multilinear form for reinitialization equation.
+    Nonlinear form F, solved by F == 0.
+    """
+    if _schema == "implicit_euler":
+        return (
+            1/_dt*inner(_phi-_phi0, _phi_t)*dx -
+            inner(_phi*(1-_phi), dot(grad(_phi_t), _n))*dx +
+            _eps*inner(grad(_phi), grad(_phi_t))*dx
+        )
+    else:
+        raise ValueError("Unknown numerical scheme {scheme_name}!".format(scheme_name=_schema))
 
-# Explicit Euler variacna formulacia
-#a = inner(u,v)*dx
-#L = inner(u0,v)*dx+dt*inner(u0,dot(grad(v),r))*dx
 
-# Crack-Nicholson variacna formulacia
-#a = inner(u,v)*dx-dt/2.0*inner(u,dot(grad(v),r))*dx
-#L = inner(u0,v)*dx+dt/2.0*inner(u0,dot(grad(v),r))*dx
-
-# bilinearna forma, nezavisi na casovom kroku
+# bilinear form, time independent
+(a, L) = get_adv_forms(phi, phi_t, phi0, "implicit_euler", dt, r)
 A = assemble(a)
 
 t = dt
-### ADVEKCIA
 while t < T + DOLFIN_EPS:
-    print "Pocitanie transportu"
-    print "t = {}".format(t)
+    print colored("Computing advection... , t = {}".format(t), "red")
     b = assemble(L)
+
     [bc.apply(A, b) for bc in [bc_bottom, bc_left, bc_top, bc_right]]
     solve(A, phi1.vector(), b)
 
     phi0.assign(phi1)
 
-    ### REINICIALIZACIA
+    print colored("Computing unit normal...", "red")
+    grad_phi = grad(phi0)
+    start = time.time()
+    n.assign(project(grad_phi/sqrt(pow(norm_eps, 2)+dot(grad_phi, grad_phi)), W))
+    print colored("Normal computation time: {:.3f}s.".format(time.time()-start), "blue")
+
+    # reinitialization
     tau = dtau
-
-    # vypocet normaloveho pola
-    plot(phi0)
-    gu = grad(phi0)
-
-    # cond = conditional(gt(phi0, 0.05), gu/sqrt(dot(gu, gu)), Constant((0, 0)))
-    # cond = conditional(lt(phi0, 0.05), 1, 0)
-    # condn = conditional(gt(sqrt(dot(gu, gu)), 0.1), gu/sqrt(dot(gu, gu)), Constant((0, 0)))
-    print "Projektujem normalu"
-    # n.assign(project(cond*condn, W))
-    n.assign(project(gu/sqrt(pow(norm_eps, 2)+dot(gu, gu)), W))
-    plot(n)
-
     while tau < Tau + DOLFIN_EPS:
-        print "Pocitam reinicializaciu, tau = {0}".format(tau)
+        start_reinit = time.time()
+        print colored("Computing reinitialization, tau = {0}...".format(tau), "red")
 
-        # Crack Nicholson reinicializacia
-        # a_r = inner(phi, phi_t)*dx-dtau/2.0*inner(phi, dot(grad(phi_t), n))*dx+ \
-        #       eps*dtau/2.0*inner(grad(phi), grad(phi_t))*dx+eps*dtau*inner(phi*phi0, dot(grad(phi_t), n))*dx
-        # L_r = inner(phi0, phi_t)*dx+dtau/2.0*inner(phi0, dot(grad(phi_t), n))*dx- \
-        #       eps*dtau/2.0*inner(grad(phi0), grad(phi_t))*dx
-        # A_r = assemble(a_r)
-        # b_r = assemble(L_r)
-        #
-        # solve(A_r, phi1.vector(), b_r)
-
-        # Implicit Euler reinicializacia
-        F = 1/dtau*inner(phi_reinit-phi0, phi_t)*dx-inner(phi_reinit*(1-phi_reinit), dot(grad(phi_t), n))*dx+eps*inner(grad(phi_reinit), grad(phi_t))*dx
+        F = get_reinit_forms(phi_reinit, phi_t, phi0, "implicit_euler", dtau, eps, n)
         solve(F == 0, phi_reinit, [])
 
         phi0.assign(phi_reinit)
 
-        print "Norma {0}".format(norm(assemble(F), "L2"))
+        print "Norm {0}".format(norm(assemble(F), "L2"))
 
         tau += dtau
         plot(phi_reinit)
 
         if norm(assemble(F), "L2") < 0.001:
+            print colored("Reinitialization computation time: {:.3f}s".format(time.time()-start_reinit), "blue")
             break
 
     t += dt
-    plot(phi0)
     lsfile << phi0
 
-
+print colored("***\n Total computational time: {:.2f}s \n***".format(time.time()-start_global), "red", "on_white")
 
 
