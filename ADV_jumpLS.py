@@ -1,8 +1,8 @@
 #
 # Advection equation
 #
-# Author michal.habera@gmail.com
-#
+# Author: Michal Habera 2015 <michal.habera@gmail.com>
+
 
 from dolfin import *
 import numpy as np
