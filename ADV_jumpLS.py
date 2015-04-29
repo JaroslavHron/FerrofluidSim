@@ -15,14 +15,14 @@ lsfile = File("results/ADV_jumpLS_ls.pvd")
 
 # Mesh and function spaces
 # mesh dimension
-m = 30
+m = 60
 mesh = UnitSquareMesh(m, m)
 V = FunctionSpace(mesh, "CG", 1)
 W = VectorFunctionSpace(mesh, "CG", 1)
 
 # advection constants
 dt = 0.02
-T = 1
+T = 2
 # time independent vector field
 r = Expression(("sin(pi*x[0])*sin(pi*x[0])*sin(2*pi*x[1])", "-sin(pi*x[1])*sin(pi*x[1])*sin(2*pi*x[0])"))
 
@@ -30,7 +30,7 @@ r = Expression(("sin(pi*x[0])*sin(pi*x[0])*sin(2*pi*x[1])", "-sin(pi*x[1])*sin(p
 d = 0
 dtau = pow(1/float(m), 1+d)/2  # Olsson Kreiss --> dtau = ((dx)^(1+d))/2
 eps = pow(1/float(m), 1-d)/2  # Olsson Kreiss --> eps = ((dx)^(1-d))/2
-Tau = 2
+Tau = 3
 # stationary state of LS, definition
 norm_eps = 0.00001
 
@@ -151,7 +151,7 @@ while t < T + DOLFIN_EPS:
         print "Norm {0}".format(norm(assemble(F), "L2"))
 
         tau += dtau
-        plot(phi_reinit)
+        plot(phi_reinit, title="Total:{:.2f}s/{:.2f}s, Reinit:{:.2f}s/{:.2f}s".format(t, T, tau, Tau))
 
         if norm(assemble(F), "L2") < 0.001:
             print colored("Reinitialization computation time: {:.3f}s".format(time.time()-start_reinit), "blue")
