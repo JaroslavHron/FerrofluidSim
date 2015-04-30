@@ -1,12 +1,14 @@
 #
 # Numericke simulacie ferrokvapalin
 #
-# @author: Michal Habera, 2015
+# @author: Michal Habera 2015
 
 from dolfin import *
+import advsolver
+import numpy as np
 
 # vytvorim/importujem siet
-d_ref = 30
+d_ref = 100
 mesh = UnitSquareMesh(d_ref, d_ref)
 
 # vytvorim subory na vysledky
@@ -46,7 +48,7 @@ ls1 = Function(S)
 noslip = DirichletBC(V, (0, 0), "on_boundary && (x[0] > (1.0-DOLFIN_EPS) | x[1] < DOLFIN_EPS  )")
 
 # casovo premenny vtok
-p_in = Expression("sin(1.0*t)*x[0]", t=0.0)
+p_in = Expression("sin(1.0*t)*x[0]*5", t=0.0)
 inflow = DirichletBC(S, p_in, "x[1] > (1.0-DOLFIN_EPS)")
 
 outflow = DirichletBC(S, 0, "x[1] < DOLFIN_EPS")
@@ -67,7 +69,7 @@ T = 6
 dt = 0.01
 
 
-# Definujem bilinearne formy 
+# Definujem bilinearne formy
 # predbezne rychlostne pole
 dt_ = Constant(dt)
 f = Constant((0, 0))
@@ -89,12 +91,39 @@ A1 = assemble(a1)
 A2 = assemble(a2)
 A3 = assemble(a3)
 
-print "Projekcia pociatocneho level setu"
-ls_0 = Expression("sqrt( (x[0]-0.25)*(x[0]-0.25) + (x[1]-0.8)*(x[1]-0.8) )-0.1 ")
-ls0.assign(project(ls_0, S))
+
+# boundaries
+def bottom_boundary(x):
+    return np.isclose(x[0], 0.0)
+
+
+def top_boundary(x):
+    return np.isclose(x[0], 1.0)
+
+
+def left_boundary(x):
+    return np.isclose(x[1], 0.0)
+
+
+def right_boundary(x):
+    return np.isclose(x[1], 1.0)
+
+d = 0
+dtau = pow(1/float(d_ref), 1+d)/2  # Olsson Kreiss --> dtau = ((dx)^(1+d))/2
+eps = pow(1/float(d_ref), 1-d)/2  # Olsson Kreiss --> eps = ((dx)^(1-d))/2
+
+# boundary conditions
+bc_bottom = DirichletBC(S, Constant(0.0), bottom_boundary)
+bc_top = DirichletBC(S, Constant(0.0), top_boundary)
+bc_left = DirichletBC(S, Constant(0.0), left_boundary)
+bc_right = DirichletBC(S, Constant(0.0), right_boundary)
+
+phi_init = Expression("1/( 1+exp((sqrt((x[0]-0.7)*(x[0]-0.7)+(x[1]-0.7)*(x[1]-0.7))-0.2)/{0}))".format(eps))
+ls0.assign(interpolate(phi_init, S))
 
 ## Casovy krok N-S rovnice
 t = dt
+lsp = plot(ls0)
 while t < T + DOLFIN_EPS:
     # aktualizujem hranicnu podmienku tlaku v novom case
     p_in.t = t
@@ -120,40 +149,29 @@ while t < T + DOLFIN_EPS:
     solve(A3, u1.vector(), b3)
     end()
 
-    ### LEVEL SET ADVEKCIA
-    # Implicit Euler Variacna formulacia
-    a4 = dt_ * inner(dot(u1, grad(ls)), ls_t) * dx + inner(ls, ls_t) * dx
-    L4 = inner(ls0, ls_t) * dx
-
-    begin("Advekcia level-setu...")
-    A4 = assemble(a4)
-    b4 = assemble(L4)
-
-    solve(A4, ls1.vector(), b4)
-    ls0.assign(ls1)
-    end()
-
-    # vykreslim vysledok
-    plot(ls0, title="Level-set", rescale=True)
+    ls1 = advsolver.advsolve(mesh, S, V, d_ref, u1, ls0, _dtau=dtau, _norm_eps=0.000001,
+                             _dt=dt, _t_end=dt, _bcs=[bc_bottom, bc_left, bc_top, bc_right])
 
     # ulozim vysledky
     ufile << u1
     pfile << p1
-    lsfile << ls1
+    lsfile << ls0
 
     # posuniem sa na dalsi casovy krok
     u0.assign(u1)
+    ls0.assign(ls1)
+
+    lsp.plot(ls1)
+    plot(u1)
     t += dt
     print "t = ", t, " \n \n \n "
 
-interactive()
 
 
 
 
 
 
-	
 
 
 
