@@ -2,14 +2,18 @@
 # Numericke simulacie ferrokvapalin
 #
 # @author: Michal Habera 2015
+#
+# TODO zachovanie objemu | overenie
+# TODO povrchove napatie - krivost explicitne, bez n
+# TODO stac. problem v reinicializaci, dt = 0
 
 from dolfin import *
 import advsolver
 import numpy as np
 
 # vytvorim/importujem siet
-d_ref = 100
-mesh = UnitSquareMesh(d_ref, d_ref)
+d_ref = 50
+mesh = UnitSquareMesh(d_ref, d_ref, "crossed")
 
 # vytvorim subory na vysledky
 ufile = File("results/velocity.pvd")
@@ -18,7 +22,7 @@ lsfile = File("results/ls.pvd")
 
 # priestory funkcii
 # skalarny
-S = FunctionSpace(mesh, "Lagrange", 1)
+S = FunctionSpace(mesh, "CG", 1)
 # vektorovy, 2. radu
 V = VectorFunctionSpace(mesh, "Lagrange", 2)
 
@@ -48,7 +52,7 @@ ls1 = Function(S)
 noslip = DirichletBC(V, (0, 0), "on_boundary && (x[0] > (1.0-DOLFIN_EPS) | x[1] < DOLFIN_EPS  )")
 
 # casovo premenny vtok
-p_in = Expression("sin(1.0*t)*x[0]*5", t=0.0)
+p_in = Expression("0", t=0.0)
 inflow = DirichletBC(S, p_in, "x[1] > (1.0-DOLFIN_EPS)")
 
 outflow = DirichletBC(S, 0, "x[1] < DOLFIN_EPS")
@@ -61,35 +65,14 @@ bcp = [inflow, outflow]
 
 # fyzikalne
 # viskozita
-nu = Constant(0.05)
+nu = Constant(0.01)
+# povrchove napatie
+sigma = Constant(1)
 
 # casove
 # N-S cyklus
 T = 6
-dt = 0.01
-
-
-# Definujem bilinearne formy
-# predbezne rychlostne pole
-dt_ = Constant(dt)
-f = Constant((0, 0))
-F1 = (1 / dt_) * inner(u - u0, u_t) * dx + inner(grad(u0) * u0, u_t) * dx + nu * inner(grad(u), grad(u_t)) * dx - inner(
-    f, u_t) * dx
-a1 = lhs(F1)
-L1 = rhs(F1)
-
-# update tlaku
-a2 = inner(grad(p), grad(p_t)) * dx
-L2 = -(1 / dt_) * div(u1) * p_t * dx
-
-# update rychlostneho pola
-a3 = inner(u, u_t) * dx
-L3 = inner(u1, u_t) * dx - dt_ * inner(grad(p1), u_t) * dx
-
-# zostavim matice bil. foriem
-A1 = assemble(a1)
-A2 = assemble(a2)
-A3 = assemble(a3)
+dt = 0.001
 
 
 # boundaries
@@ -118,39 +101,68 @@ bc_top = DirichletBC(S, Constant(0.0), top_boundary)
 bc_left = DirichletBC(S, Constant(0.0), left_boundary)
 bc_right = DirichletBC(S, Constant(0.0), right_boundary)
 
-phi_init = Expression("1/( 1+exp((sqrt((x[0]-0.7)*(x[0]-0.7)+(x[1]-0.7)*(x[1]-0.7))-0.2)/{0}))".format(eps))
-ls0.assign(interpolate(phi_init, S))
+phi_init = Expression("1/( 1+exp((sqrt(8.0*(x[0]-0.5)*(x[0]-0.5)+(x[1]-0.5)*(x[1]-0.5))-0.2)/{0}))".format(eps))
+ls0.assign(project(phi_init, S))
+
+
+dt_ = Constant(dt)
+# update tlaku
+a2 = inner(grad(p), grad(p_t)) * dx
+L2 = -(1 / dt_) * div(u1) * p_t * dx
+
+# update rychlostneho pola
+a3 = inner(u, u_t) * dx
+L3 = inner(u1, u_t) * dx - dt_ * inner(grad(p1), u_t) * dx
+
+# zostavim matice bil. foriem
+A2 = assemble(a2)
+A3 = assemble(a3)
 
 ## Casovy krok N-S rovnice
 t = dt
 lsp = plot(ls0)
+Fsigma = Function(V)
 while t < T + DOLFIN_EPS:
     # aktualizujem hranicnu podmienku tlaku v novom case
     p_in.t = t
 
+    # ziskam LS v novom case
+    ls1, n = advsolver.advsolve(mesh, FunctionSpace(mesh, "CG", 1), VectorFunctionSpace(mesh, "CG", 1), d_ref, u0, ls0, _dtau=dtau, _eps=eps, _norm_eps=0.001,
+                                _dt=dt, _t_end=dt, _bcs=[bc_bottom, bc_left, bc_top, bc_right],
+                                _adv_scheme="crank_nicholson")
+    # plot(n, interactive=True)
+    Ttens = sigma*(Identity(2)-outer(n, n))*sqrt(pow(0.000001, 2) + dot(grad(ls1), grad(ls1)))
+    Fsigma.assign(project(div(Ttens), VectorFunctionSpace(mesh, "CG", 1)))
+
+    # Definujem bilinearne formy
+    # predbezne rychlostne pole
+    dt_ = Constant(dt)
+    f = Fsigma
+    F1 = (1 / dt_) * inner(u - u0, u_t) * dx + inner(grad(u0) * u0, u_t) * dx + nu * inner(grad(u), grad(u_t)) * dx - inner(
+        f, u_t) * dx
+    a1 = lhs(F1)
+    L1 = rhs(F1)
+
+    A1 = assemble(a1)
+
+
     # pocitanie predbezneho rychlostneho pola
-    begin("Pocitam predbezne rychlostne pole")
+    print "Pocitam predbezne rychlostne pole"
     b1 = assemble(L1)
     [bc.apply(A1, b1) for bc in bcu]
     solve(A1, u1.vector(), b1)
-    end()
 
     # korekcia tlaku
-    begin("Pocitam tlakovu korekciu...")
+    print "Pocitam tlakovu korekciu..."
     b2 = assemble(L2)
     [bc.apply(A2, b2) for bc in bcp]
     solve(A2, p1.vector(), b2)
-    end()
 
     # korekcia rychlosti
-    begin("Pocitam rychlostnu korekciu...")
+    print "Pocitam rychlostnu korekciu..."
     b3 = assemble(L3)
     [bc.apply(A3, b3) for bc in bcu]
     solve(A3, u1.vector(), b3)
-    end()
-
-    ls1 = advsolver.advsolve(mesh, S, V, d_ref, u1, ls0, _dtau=dtau, _norm_eps=0.000001,
-                             _dt=dt, _t_end=dt, _bcs=[bc_bottom, bc_left, bc_top, bc_right])
 
     # ulozim vysledky
     ufile << u1
@@ -162,9 +174,8 @@ while t < T + DOLFIN_EPS:
     ls0.assign(ls1)
 
     lsp.plot(ls1)
-    plot(u1)
     t += dt
-    print "t = ", t, " \n \n \n "
+    print "t = ", t, " \n"
 
 
 

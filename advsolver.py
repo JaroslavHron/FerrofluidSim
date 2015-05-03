@@ -6,13 +6,12 @@
 
 from dolfin import *
 import time
-from termcolor import colored
 
 
 def advsolve(_mesh, _ls_space, _normal_space, _size_ref, _v, _init_ls,
              _dt=0.1, _t_end=0.1, _dtau=0.1, _tau_end=10, _norm_eps=0.0001,
              _adv_scheme="implicit_euler", _reinit_scheme="implicit_euler",
-             _eps=0.01, _bcs=None, _plot=True):
+             _eps=0.01, _bcs=None, _plot=True, _log_level=30):
     """
 
     Solve advection equation for jump Level-set
@@ -38,12 +37,16 @@ def advsolve(_mesh, _ls_space, _normal_space, _size_ref, _v, _init_ls,
     :param _eps: determines reinitialization diffusion term size
     :param _bcs: boundary conditions
     :param _plot: show plot
+    :param _log_level: DOLFIN logging level, 10...50 = many...few details
     :return:
 
     """
 
     # start time measurement
     advtime = time.time()
+
+    # dolfin logging level
+    set_log_level(_log_level)
 
     if not isinstance(_mesh, Mesh):
         raise ValueError("Mesh must be instance of Dolfin Mesh().")
@@ -58,9 +61,9 @@ def advsolve(_mesh, _ls_space, _normal_space, _size_ref, _v, _init_ls,
     if not isinstance(_init_ls, Function):
         raise ValueError("Initial level-set must be instance of Function().")
 
-    print (" ########################### \n"
-           " Advection solver started... \n"
-           " ########################### \n")
+    print ("########################### \n"
+           " Advection solver started...\n"
+           "########################### \n")
 
     phi = TrialFunction(_ls_space)
     phi_t = TestFunction(_ls_space)
@@ -76,23 +79,23 @@ def advsolve(_mesh, _ls_space, _normal_space, _size_ref, _v, _init_ls,
     # advection time step
     t = _dt
     while t <= _t_end:
-        print colored("Computing advection at t = {}s...".format(t), "red")
+        print "Computing advection at t = {}s...".format(t)
 
         aslinform = assemble(linform)
         [bc.apply(asbilinform, aslinform) for bc in _bcs]
         solve(asbilinform, phires.vector(), aslinform)
 
-        print colored("Computing unit normal...", "red")
+        print "Computing unit normal before reinitialization..."
         gradphi = grad(phires)
         start = time.time()
         n.assign(project(gradphi / sqrt(pow(_norm_eps, 2) + dot(gradphi, gradphi)), _normal_space))
-        print colored("Normal computation time: {:.3f}s.".format(time.time() - start), "blue")
+        print "Normal computation time: {:.3f}s.".format(time.time() - start)
 
         # reinitialization sub-time step
         tau = _dtau
         while tau <= _tau_end:
             startreinit = time.time()
-            print colored("Computing reinitialization at tau = {}s...".format(tau), "red")
+            print "Computing reinitialization at tau = {}s...".format(tau)
 
             f = get_reinit_forms(phireinit, phi_t, phires, _reinit_scheme, _dtau, _eps, n)
             solve(f == 0, phireinit, [])
@@ -101,17 +104,23 @@ def advsolve(_mesh, _ls_space, _normal_space, _size_ref, _v, _init_ls,
 
             tau += _dtau
 
-            if norm(assemble(f), "L2") < 0.001:
-                print colored("Reinitialization computation time: {:.3f}s".format(time.time() - startreinit), "blue")
+            if norm(assemble(f), "L2") < 0.0001:
+                print "Reinitialization computation time: {:.3f}s".format(time.time() - startreinit)
                 break
 
         t += _dt
 
-    print (" ###########################  \n"
+    # print "Computing unit normal after reinitialization..."
+    # gradphi = grad(phires)
+    # start = time.time()
+    # n.assign(project(gradphi / sqrt(pow(_norm_eps, 2) + dot(gradphi, gradphi)), _normal_space))
+    # print "Normal computation time: {:.3f}s.".format(time.time() - start)
+
+    print ("\n###########################  \n"
            " Advection solver end         \n"
            " Total execution time: {:.2f}s\n"
-           " ###########################  \n".format(time.time() - advtime))
-    return phires
+           "###########################  \n".format(time.time() - advtime))
+    return phires, n
 
 
 def get_adv_forms(_phi, _phi_t, _phi0, _schema="implicit_euler", _dt=0.1, _r=Constant((0, 0))):
