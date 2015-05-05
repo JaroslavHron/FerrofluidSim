@@ -8,8 +8,8 @@ import advsolver
 import numpy as np
 
 # vytvorim/importujem siet
-d_ref = 100
-mesh = UnitSquareMesh(d_ref, d_ref)
+d_ref = 32
+mesh = UnitSquareMesh(d_ref, d_ref,"crossed")
 
 # vytvorim subory na vysledky
 ufile = File("results/velocity.pvd")
@@ -21,6 +21,7 @@ lsfile = File("results/ls.pvd")
 S = FunctionSpace(mesh, "Lagrange", 1)
 # vektorovy, 2. radu
 V = VectorFunctionSpace(mesh, "Lagrange", 2)
+N = VectorFunctionSpace(mesh, "CG", 1)
 
 # trial a test funnkcie
 # rychlostne pole
@@ -149,7 +150,7 @@ while t < T + DOLFIN_EPS:
     solve(A3, u1.vector(), b3)
     end()
 
-    ls1 = advsolver.advsolve(mesh, S, V, d_ref, u1, ls0, _dtau=dtau, _norm_eps=0.000001,
+    ls1 = advsolver.advsolve(mesh, S, N, d_ref, u1, ls0, _dtau=dtau, _norm_eps=0.000001,
                              _dt=dt, _t_end=dt, _bcs=[bc_bottom, bc_left, bc_top, bc_right])
 
     # ulozim vysledky

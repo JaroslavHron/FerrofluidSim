@@ -68,6 +68,7 @@ def advsolve(_mesh, _ls_space, _normal_space, _size_ref, _v, _init_ls,
     phires = Function(_ls_space)
     phireinit = Function(_ls_space)
     n = Function(_normal_space)
+    n_ = TestFunction(_normal_space)
 
     # bilinear form, advection step independent
     (bilinform, linform) = get_adv_forms(phi, phi_t, _init_ls, _adv_scheme, _dt, _v)
@@ -86,24 +87,31 @@ def advsolve(_mesh, _ls_space, _normal_space, _size_ref, _v, _init_ls,
         gradphi = grad(phires)
         start = time.time()
         n.assign(project(gradphi / sqrt(pow(_norm_eps, 2) + dot(gradphi, gradphi)), _normal_space))
+        #np=grad(phires)/sqrt(pow(_norm_eps, 2) + dot(gradphi, gradphi))-n
+        #fn= inner(np,n_)*dx + inner(grad(np),grad(n_))*dx
+        #solve(fn == 0,n,[], solver_parameters={"newton_solver":{"relative_tolerance": 1e-6, "absolute_tolerance": 1e-6}})
         print colored("Normal computation time: {:.3f}s.".format(time.time() - start), "blue")
 
+        startreinit = time.time()
+        f = get_reinit_forms(phires, phi_t, phires,"direct", _dtau, _eps, n)
+        solve(f == 0, phires, [], solver_parameters={"newton_solver":{"relative_tolerance": 1e-6, "absolute_tolerance": 1e-6}})
+
         # reinitialization sub-time step
-        tau = _dtau
-        while tau <= _tau_end:
-            startreinit = time.time()
-            print colored("Computing reinitialization at tau = {}s...".format(tau), "red")
+        # tau = _dtau
+        # while tau <= _tau_end:
+        #     startreinit = time.time()
+        #     print colored("Computing reinitialization at tau = {}s...".format(tau), "red")
 
-            f = get_reinit_forms(phireinit, phi_t, phires, _reinit_scheme, _dtau, _eps, n)
-            solve(f == 0, phireinit, [])
+        #     f = get_reinit_forms(phireinit, phi_t, phires, _reinit_scheme, _dtau, _eps, n)
+        #     solve(f == 0, phireinit, [])
 
-            phires.assign(phireinit)
+        #     phires.assign(phireinit)
 
-            tau += _dtau
+        #     tau += _dtau
 
-            if norm(assemble(f), "L2") < 0.001:
-                print colored("Reinitialization computation time: {:.3f}s".format(time.time() - startreinit), "blue")
-                break
+        #     if norm(assemble(f), "L2") < 0.001:
+        #         print colored("Reinitialization computation time: {:.3f}s".format(time.time() - startreinit), "blue")
+        #         break
 
         t += _dt
 
@@ -149,5 +157,11 @@ def get_reinit_forms(_phi, _phi_t, _phi0, _schema="implicit_euler", _dt=0.1, _ep
             inner(_phi * (1 - _phi), dot(grad(_phi_t), _n)) * dx +
             _eps * inner(grad(_phi), grad(_phi_t)) * dx
         )
+    elif _schema == "direct":
+        return (
+            - inner(_phi * (1 - _phi), dot(grad(_phi_t), _n)) * dx 
+            + _eps * inner(grad(_phi),grad(_phi_t)) * dx
+        )
     else:
         raise ValueError("Unknown numerical scheme {scheme_name}!".format(scheme_name=_schema))
+
