@@ -1,4 +1,6 @@
-results/
+rising_bubble/results/
+dripping/results/
+videos_mix/*.avi
 .idea/
 *.pvd
 *.vtu
