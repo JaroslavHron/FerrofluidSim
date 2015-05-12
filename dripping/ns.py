@@ -81,7 +81,7 @@ patm = 0.0 * rhoref * uref * uref  # Pa
 # nondim
 # dyn viscosity
 # out LS
-nu1 = 1.78 * pow(10, -5) / nuref
+nu1 = 1.78 * pow(10, -3) / nuref
 # in LS 
 nu2 = 1.0 * pow(10, -3) / nuref
 # density
@@ -120,7 +120,7 @@ T = 10.0
 dt = 0.01
 
 # reinit
-d = 0.2
+d = 0.1
 dtau = pow(1 / float(d_ref), 1 + d) / 2  # Olsson Kreiss --> dtau = ((dx)^(1+d))/2
 eps = pow(1 / float(d_ref), 1 - d) / 2  # Olsson Kreiss --> eps = ((dx)^(1-d))/2
 
@@ -140,8 +140,8 @@ bottom = DirichletBC(P, patm, bottom_boundary)
 top = DirichletBC(P, patm, top_boundary)
 
 # merge bcs
-bcu = [freeslipleft, freeslipright, DirichletBC(U, Constant((0.0, -0.5)), top_boundary), DirichletBC(U, Constant((0.0, -0.5)), bottom_boundary)]
-bcp = [bottom]
+bcu = []
+bcp = [DirichletBC(P, 0.0, top_boundary), DirichletBC(P, 0.0, bottom_boundary), DirichletBC(P, 0.0, left_boundary), DirichletBC(P, 0.0, right_boundary)]
 
 radius = 0.2
 initx = 0.5
@@ -161,10 +161,10 @@ u0_init = Constant((0.0, 0.0))
 u0.assign(project(u0_init, U))
 
 # pressure init
-pinit1 = Constant(0.0)
-pinit2 = pinit1
-p_init = pinit1 + (pinit2 - pinit1) * ls0
-p0.assign(project(p_init, P))
+# pinit1 = Constant(0.0)
+# pinit2 = pinit1
+# p_init = pinit1 + (pinit2 - pinit1) * ls0
+# p0.assign(project(p_init, P))
 
 dt_ = Constant(dt)
 # N-S time step
@@ -179,7 +179,7 @@ while t < T + DOLFIN_EPS:
     Ttens = (Identity(2) - outer(n, n)) * sqrt(pow(0.00001, 2) + dot(grad(ls1), grad(ls1)))
 
     # tentative velocity
-    f = pow(1.0 / froude, 2) * rho(ls1) * Constant((0, -1.0))
+    f = 0.0*ls1*pow(1.0 / froude, 2) * rho(ls1) * Constant((0, -1.0))
     F1 = (1.0 / dt_) * inner(rho(ls1) * u - rho(ls0) * u0, u_t) * dx \
          - inner(dot(grad(u_t), u0), rho(ls1) * u) * dx \
          - inner(div(u_t), p0) * dx \
