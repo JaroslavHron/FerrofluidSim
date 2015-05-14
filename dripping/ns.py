@@ -134,7 +134,7 @@ print "########################"
 
 # N-S iteration
 T = 10.0
-dt = 0.005
+dt = 0.02
 
 # reinit
 d = 0.0
@@ -285,7 +285,7 @@ while t < T + DOLFIN_EPS:
     # end()
     # Fenics demo Chorin END
 
-	### Guermond 2008
+    ### Guermond 2008
     F1 = 1/dt*inner(0.5*(rho(ls0)+rho(ls1))*u, u_t)*dx \
         + 1/reynolds*nu(ls1)*inner(grad(u), grad(u_t))*dx \
         + inner(dot(rho(ls1)*u0, grad(u)), u_t)*dx \
@@ -299,7 +299,7 @@ while t < T + DOLFIN_EPS:
     A1 = assemble(a1)
     b1 = assemble(L1)
     [bc.apply(A1, b1) for bc in bcu]
-    solve(A1, u1.vector(), b1, "gmres", "default")
+    solve(A1, u1.vector(), b1)
     
     F2 = inner(grad(psi), grad(psi_t))*dx \
         - chi/dt*inner(u1, grad(psi_t))*dx
@@ -310,7 +310,7 @@ while t < T + DOLFIN_EPS:
     A2 = assemble(a2)
     b2 = assemble(L2)
     [bc.apply(A2, b2) for bc in []]
-    solve(A2, psi1.vector(), b2, "gmres", "default")
+    solve(A2, psi1.vector(), b2)
     
     p1.assign(project(p0 + psi1, P))
 		
@@ -330,7 +330,7 @@ while t < T + DOLFIN_EPS:
     ls0.assign(ls1)
     psi0.assign(psi1)
     plot(u0, interactive=False)
-    plot(p0, interactive=False)
+    # plot(p0, interactive=False)
     plot(ls0, key="ls0")
     t += dt
     print "t = ", t, " \n"

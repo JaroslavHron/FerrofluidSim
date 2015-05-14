@@ -27,6 +27,3 @@ Line(7) = {3, 4};
 Line(8) = {8, 9};
 Line Loop(9) = {3, 1, -2, 7, 6, -5, -8, 4};
 Plane Surface(10) = {9};
-
-Mesh.SubdivisionAlgorithm=3;
-Mesh.Algorithm=8
