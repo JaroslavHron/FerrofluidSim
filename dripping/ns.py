@@ -97,7 +97,7 @@ patm = 0.0 * rhoref * uref * uref  # Pa
 # nondim
 # dyn viscosity
 # out LS
-nu1 = 1.78e-4 / nuref
+nu1 = 1.78e-2 / nuref
 # in LS 
 nu2 = 1.0e-2 / nuref
 # density
@@ -108,9 +108,9 @@ rho2 = 1000.0 / rhoref
 # surface tension
 sigma = 0.07275
 # grav accel
-grav = 9.81
+grav = 9.81/20.0
 # min of dens.
-chi = 0.5 / rhoref
+chi = 0.1 / rhoref
 
 def rho(_ls):
     return rho1 + (rho2 - rho1) * _ls
@@ -134,7 +134,7 @@ print "########################"
 
 # N-S iteration
 T = 10.0
-dt = 0.01
+dt = 0.2
 
 # reinit
 d = 0.0
@@ -158,14 +158,14 @@ top = DirichletBC(P, patm, top_boundary)
 
 # merge bcs
 bcu = [DirichletBC(U, Constant((0.0, 0.0)), left_inlet_boundary), DirichletBC(U, Constant((0.0, 0.0)), right_inlet_boundary), 
-       DirichletBC(U.sub(1), 0.0, top_boundary), freeslipright, freeslipleft]
-bcp = [DirichletBC(P, 0.0, bottom_boundary), DirichletBC(P, 0.0, top_inlet_boundary)]
+       DirichletBC(U.sub(1), 0.0, top_boundary), DirichletBC(U, Constant((0.0, -0.1)), top_inlet_boundary)]
+bcp = [DirichletBC(P, 0.0, bottom_boundary), DirichletBC(P, 8.0, top_inlet_boundary)]
 
 radius = 0.4
 initx = 0.5
-inity = 2.4
+inity = 1.4
 phiinit = Expression(
-    "1/( 1+exp((sqrt((x[0]-{0})*(x[0]-{0})+(x[1]-{1})*(x[1]-{1}))-{2})/{3}))".format(initx, inity, radius, eps))
+    "1/( 1+exp((sqrt(2.0*(x[0]-{0})*(x[0]-{0})+(x[1]-{1})*(x[1]-{1}))-{2})/{3}))".format(initx, inity, radius, eps))
 ls0.assign(project(phiinit, LS))
 
 # LS init
@@ -194,14 +194,14 @@ while t < T + DOLFIN_EPS:
     # advance LS
     ls1, n = advsolver.advsolve(mesh, LS, N, d_ref, u0, ls0,
                                 _dtau=dtau, _eps=eps, _norm_eps=0.00001,
-                                _dt=dt, _t_end=dt, _bcs=[DirichletBC(LS, 1.0, top_inlet_boundary)],
+                                _dt=dt, _t_end=dt, _bcs=[DirichletBC(LS, 0.0, top_inlet_boundary)],
                                 _adv_scheme="implicit_euler")
 
-    Ttens = (Identity(2) - outer(n, n)) * sqrt(pow(0.00001, 2) + dot(grad(ls0), grad(ls0)))
-
+    Ttens = (Identity(2) - outer(n, n)) * sqrt(pow(0.00001, 2) + dot(grad(ls1), grad(ls1)))
+    plot(div(Ttens), key="normal")
     ### Olsson 2007
     # tentative velocity
-    f = pow(1.0 / froude, 2) * rho(ls1) * Constant((0, -1.0))
+    f = 0.0*pow(1.0 / froude, 2) * rho(ls1) * Constant((0, -1.0))
     #F1 = (1.0 / dt_) * inner(rho(ls1) * u - rho(ls0) * u0, u_t) * dx \
     #     - inner(dot(grad(u_t), u0), rho(ls1) * u) * dx \
     #     - div(u_t)*p0 * dx \
@@ -291,7 +291,8 @@ while t < T + DOLFIN_EPS:
         + 0.5*inner(div(rho(ls1)*u0)*u, u_t)*dx \
         + inner(grad(p0 + psi0), u_t)*dx \
         - inner(f, u_t)*dx \
-        - 1/dt*inner(rho(ls0)*u0, u_t)*dx
+        - 1/dt*inner(rho(ls0)*u0, u_t)*dx \
+        + 1.0 / weber * sigma * inner(Ttens, grad(u_t)) * dx
     a1 = lhs(F1)
     L1 = rhs(F1)
     
@@ -319,7 +320,7 @@ while t < T + DOLFIN_EPS:
     # advance LS
     ls1, n = advsolver.advsolve(mesh, LS, N, d_ref, u1, ls0,
                                 _dtau=dtau, _eps=eps, _norm_eps=0.00001,
-                                _dt=dt, _t_end=dt, _bcs=[DirichletBC(LS, 1.0, top_inlet_boundary)],
+                                _dt=dt, _t_end=dt, _bcs=[DirichletBC(LS, 0.0, top_inlet_boundary)],
                                 _adv_scheme="implicit_euler")
 
     lsfile << ls0
@@ -335,10 +336,3 @@ while t < T + DOLFIN_EPS:
     print "t = ", t, " \n"
 
 print "Total time: {}".format(start_time - time.time())
-
-
-
-
-
-
-
