@@ -83,7 +83,7 @@ def advsolve(_mesh, _ls_space, _normal_space, _size_ref, _v, _init_ls,
 
         aslinform = assemble(linform)
         [bc.apply(asbilinform, aslinform) for bc in _bcs]
-        solve(asbilinform, phires.vector(), aslinform, 'mumps')
+        solve(asbilinform, phires.vector(), aslinform, "gmres", "default")
 
         print "Computing unit normal before reinitialization..."
         gradphi = grad(phires)
@@ -100,7 +100,7 @@ def advsolve(_mesh, _ls_space, _normal_space, _size_ref, _v, _init_ls,
             f = get_reinit_forms(phireinit, phi_t, phires, _reinit_scheme, _dtau, _eps, n)
 
             solve(f == 0, phireinit, bcs=[],
-                  solver_parameters={"newton_solver": {'linear_solver': 'mumps'}},
+                  solver_parameters={"newton_solver": {'linear_solver': 'gmres', "preconditioner": "default"}},
                   form_compiler_parameters={"optimize": True})
 
             phires.assign(phireinit)
