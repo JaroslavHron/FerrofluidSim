@@ -97,9 +97,9 @@ patm = 0.0 * rhoref * uref * uref  # Pa
 # nondim
 # dyn viscosity
 # out LS
-nu1 = 1.78 * pow(10, -1) / nuref
+nu1 = 1.78e-3 / nuref
 # in LS 
-nu2 = 1.0 * pow(10, -1) / nuref
+nu2 = 1.0e-1 / nuref
 # density
 # out LS
 rho1 = 1.0 / rhoref
@@ -110,7 +110,7 @@ sigma = 0.07275
 # grav accel
 grav = 9.81
 # min of dens.
-chi = 1.0
+chi = 0.5 / rhoref
 
 def rho(_ls):
     return rho1 + (rho2 - rho1) * _ls
@@ -157,11 +157,9 @@ bottom = DirichletBC(P, patm, bottom_boundary)
 top = DirichletBC(P, patm, top_boundary)
 
 # merge bcs
-bcu = [DirichletBC(U, Constant((0.0, 0.0)), left_inlet_boundary), DirichletBC(U, Constant((0.0, 0.0)), right_inlet_boundary),
-       DirichletBC(U, Constant((0.0, 0.0)), top_boundary), DirichletBC(U, Constant((0.0, 0.0)), left_boundary),
-       DirichletBC(U, Constant((0.0, 0.0)), right_boundary), DirichletBC(U, Constant((0.0, 0.0)), top_inlet_boundary),
-       DirichletBC(U, Constant((0.0, 0.0)), bottom_boundary)]
-bcp = [DirichletBC(P, 0.0, bottom_boundary), DirichletBC(P, 0.0, left_boundary),
+bcu = [DirichletBC(U, Constant((0.0, 0.0)), left_inlet_boundary), DirichletBC(U, Constant((0.0, 0.0)), right_inlet_boundary), DirichletBC(U, Constant((0.0, 0.0)), left_boundary),
+       DirichletBC(U, Constant((0.0, 0.0)), right_boundary), DirichletBC(U, Constant((0.0, -0.5)), top_inlet_boundary)]
+bcp = [DirichletBC(P, 0.0, top_boundary),
        DirichletBC(P, 0.0, right_boundary)]
 
 radius = 0.4
@@ -204,46 +202,46 @@ while t < T + DOLFIN_EPS:
 
     ### Olsson 2007
     # tentative velocity
-    f = pow(1.0 / froude, 2) * rho(ls1) * Constant((0, -1.0))
-    # F1 = (1.0 / dt_) * inner(rho(ls1) * u - rho(ls0) * u0, u_t) * dx \
-    #      - inner(dot(grad(u_t), u0), rho(ls1) * u) * dx \
-    #      - div(u_t)*p0 * dx \
-    #      + 1.0 / reynolds * inner(nu(ls1) * sym(grad(u)), grad(u_t)) * dx \
-    #      + 1.0 / weber * sigma * inner(Ttens, grad(u_t)) * dx \
-    #      - inner(f, u_t) * dx
-    # a1 = lhs(F1)
-    # L1 = rhs(F1)
-    #
-    # # pressure corr
-    # a2 = 1.0 / rho(ls1) * inner(grad(p), grad(p_t)) * dx
-    # L2 = -(1.0 / dt_) * inner(div(u1), p_t) * dx + 1.0 / rho(ls1) * inner(grad(p0), grad(p_t)) * dx
-    #
-    # # velocity corr
-    # a3 = inner(u, u_t) * dx
-    # L3 = inner(u1, u_t) * dx - dt_ * inner(grad(p1 - p0), u_t) / (rho(ls1)) * dx
-    #
-    # A1 = assemble(a1)
-    # A2 = assemble(a2)
-    # A3 = assemble(a3)
-    #
-    # print "Computing tentative velocity..."
-    # b1 = assemble(L1)
-    # [bc.apply(A1, b1) for bc in bcu]
-    # solve(A1, u1.vector(), b1, 'mumps')
-    #
-    # print "Computing pressure correction..."
-    # b2 = assemble(L2)
-    # [bc.apply(A2, b2) for bc in bcp]
-    # solve(A2, p1.vector(), b2, 'mumps')
-    #
-    # print "Computing velocity correction..."
-    # b3 = assemble(L3)
-    # [bc.apply(A3, b3) for bc in bcu]
-    # solve(A3, u1.vector(), b3, 'mumps')
+    f = ls1*pow(1.0 / froude, 2) * rho(ls1) * Constant((0, -1.0))
+    #F1 = (1.0 / dt_) * inner(rho(ls1) * u - rho(ls0) * u0, u_t) * dx \
+    #     - inner(dot(grad(u_t), u0), rho(ls1) * u) * dx \
+    #     - div(u_t)*p0 * dx \
+    #     + 1.0 / reynolds * inner(nu(ls1) * sym(grad(u)), grad(u_t)) * dx \
+    #     + 1.0 / weber * sigma * inner(Ttens, grad(u_t)) * dx \
+    #     - inner(f, u_t) * dx
+    #a1 = lhs(F1)
+    #L1 = rhs(F1)
+
+    ## pressure corr
+    #a2 = 1.0 / rho(ls1) * inner(grad(p), grad(p_t)) * dx
+    #L2 = -(1.0 / dt_) * inner(div(u1), p_t) * dx + 1.0 / rho(ls1) * inner(grad(p0), grad(p_t)) * dx
+
+    # velocity corr
+    #a3 = inner(u, u_t) * dx
+    #L3 = inner(u1, u_t) * dx - dt_ * inner(grad(p1 - p0), u_t) / (rho(ls1)) * dx
+
+    #A1 = assemble(a1)
+    #A2 = assemble(a2)
+    #A3 = assemble(a3)
+
+    #print "Computing tentative velocity..."
+    #b1 = assemble(L1)
+    #[bc.apply(A1, b1) for bc in bcu]
+    #solve(A1, u1.vector(), b1, 'mumps')
+
+    #print "Computing pressure correction..."
+    #b2 = assemble(L2)
+    #[bc.apply(A2, b2) for bc in bcp]
+    #solve(A2, p1.vector(), b2, 'mumps')
+
+    #print "Computing velocity correction..."
+    #b3 = assemble(L3)
+    #[bc.apply(A3, b3) for bc in bcu]
+    #solve(A3, u1.vector(), b3, 'mumps')
     ### Olsson 2007 END
 
     ### Fenics demo Chorin
-    # Tentative velocity step
+    # # Tentative velocity step
     # F1 = (1/dt)*rho(ls1)*inner(u - u0, u_t)*dx + \
     #     rho(ls0)*inner(grad(u0)*u0, u_t)*dx + \
     #     nu(ls1)/reynolds*inner(grad(u), grad(u_t))*dx - \
@@ -251,35 +249,35 @@ while t < T + DOLFIN_EPS:
     #     1.0 / weber * sigma * inner(Ttens, grad(u_t)) * dx
     # a1 = lhs(F1)
     # L1 = rhs(F1)
-
-    # Pressure update
+    #
+    # # Pressure update
     # a2 = inner(grad(p), grad(p_t))*dx
     # L2 = -(1/dt)*div(u1)*p_t*dx
-
-    # Velocity update
+    #
+    # # Velocity update
     # a3 = inner(u, u_t)*dx
     # L3 = inner(u1, u_t)*dx - dt*inner(grad(p1), u_t)*dx
-
-    # Assemble matrices
+    #
+    # # Assemble matrices
     # A1 = assemble(a1)
     # A2 = assemble(a2)
     # A3 = assemble(a3)
-
-    # Compute tentative velocity step
+    #
+    # # Compute tentative velocity step
     # begin("Computing tentative velocity")
     # b1 = assemble(L1)
     # [bc.apply(A1, b1) for bc in bcu]
     # solve(A1, u1.vector(), b1, "gmres", "default")
     # end()
-
-    # Pressure correction
+    #
+    # # Pressure correction
     # begin("Computing pressure correction")
     # b2 = assemble(L2)
     # [bc.apply(A2, b2) for bc in bcp]
     # solve(A2, p1.vector(), b2, "cg", "amg")
     # end()
-
-    # Velocity correction
+    #
+    # # Velocity correction
     # begin("Computing velocity correction")
     # b3 = assemble(L3)
     # [bc.apply(A3, b3) for bc in bcu]
@@ -287,7 +285,7 @@ while t < T + DOLFIN_EPS:
     # end()
     # Fenics demo Chorin END
 
-		### Guermond 2008
+	### Guermond 2008
     F1 = 1/dt*inner(0.5*(rho(ls0)+rho(ls1))*u, u_t)*dx \
         + 1/reynolds*nu(ls1)*inner(grad(u), grad(u_t))*dx \
         + inner(dot(rho(ls1)*u0, grad(u)), u_t)*dx \
@@ -297,23 +295,23 @@ while t < T + DOLFIN_EPS:
         - 1/dt*inner(rho(ls0)*u0, u_t)*dx
     a1 = lhs(F1)
     L1 = rhs(F1)
-
+    
     A1 = assemble(a1)
     b1 = assemble(L1)
     [bc.apply(A1, b1) for bc in bcu]
     solve(A1, u1.vector(), b1, "gmres", "default")
-
+    
     F2 = inner(grad(psi), grad(psi_t))*dx \
         - chi/dt*inner(u1, grad(psi_t))*dx
-
+    
     a2 = lhs(F2)
     L2 = rhs(F2)
-
+    
     A2 = assemble(a2)
     b2 = assemble(L2)
     [bc.apply(A2, b2) for bc in []]
     solve(A2, psi1.vector(), b2, "gmres", "default")
-
+    
     p1.assign(project(p0 + psi1, P))
 		
 
@@ -331,7 +329,7 @@ while t < T + DOLFIN_EPS:
     p0.assign(p1)
     ls0.assign(ls1)
     psi0.assign(psi1)
-    plot(u0, interactive=True)
+    plot(u0, interactive=False)
     plot(p0, interactive=False)
     plot(ls0, key="ls0")
     t += dt
