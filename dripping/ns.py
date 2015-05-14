@@ -97,9 +97,9 @@ patm = 0.0 * rhoref * uref * uref  # Pa
 # nondim
 # dyn viscosity
 # out LS
-nu1 = 1.78e-3 / nuref
+nu1 = 1.78e-4 / nuref
 # in LS 
-nu2 = 1.0e-1 / nuref
+nu2 = 1.0e-2 / nuref
 # density
 # out LS
 rho1 = 1.0 / rhoref
@@ -134,7 +134,7 @@ print "########################"
 
 # N-S iteration
 T = 10.0
-dt = 0.02
+dt = 0.01
 
 # reinit
 d = 0.0
@@ -157,10 +157,9 @@ bottom = DirichletBC(P, patm, bottom_boundary)
 top = DirichletBC(P, patm, top_boundary)
 
 # merge bcs
-bcu = [DirichletBC(U, Constant((0.0, 0.0)), left_inlet_boundary), DirichletBC(U, Constant((0.0, 0.0)), right_inlet_boundary), DirichletBC(U, Constant((0.0, 0.0)), left_boundary),
-       DirichletBC(U, Constant((0.0, 0.0)), right_boundary), DirichletBC(U, Constant((0.0, -0.5)), top_inlet_boundary)]
-bcp = [DirichletBC(P, 0.0, top_boundary),
-       DirichletBC(P, 0.0, right_boundary)]
+bcu = [DirichletBC(U, Constant((0.0, 0.0)), left_inlet_boundary), DirichletBC(U, Constant((0.0, 0.0)), right_inlet_boundary), 
+       DirichletBC(U.sub(1), 0.0, top_boundary), freeslipright, freeslipleft]
+bcp = [DirichletBC(P, 0.0, bottom_boundary), DirichletBC(P, 0.0, top_inlet_boundary)]
 
 radius = 0.4
 initx = 0.5
@@ -202,7 +201,7 @@ while t < T + DOLFIN_EPS:
 
     ### Olsson 2007
     # tentative velocity
-    f = ls1*pow(1.0 / froude, 2) * rho(ls1) * Constant((0, -1.0))
+    f = pow(1.0 / froude, 2) * rho(ls1) * Constant((0, -1.0))
     #F1 = (1.0 / dt_) * inner(rho(ls1) * u - rho(ls0) * u0, u_t) * dx \
     #     - inner(dot(grad(u_t), u0), rho(ls1) * u) * dx \
     #     - div(u_t)*p0 * dx \
