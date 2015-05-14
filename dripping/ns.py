@@ -299,7 +299,7 @@ while t < T + DOLFIN_EPS:
     A1 = assemble(a1)
     b1 = assemble(L1)
     [bc.apply(A1, b1) for bc in bcu]
-    solve(A1, u1.vector(), b1)
+    solve(A1, u1.vector(), b1, "gmres", "default")
     
     F2 = inner(grad(psi), grad(psi_t))*dx \
         - chi/dt*inner(u1, grad(psi_t))*dx
@@ -310,7 +310,7 @@ while t < T + DOLFIN_EPS:
     A2 = assemble(a2)
     b2 = assemble(L2)
     [bc.apply(A2, b2) for bc in []]
-    solve(A2, psi1.vector(), b2)
+    solve(A2, psi1.vector(), b2, "gmres", "default")
     
     p1.assign(project(p0 + psi1, P))
 		
