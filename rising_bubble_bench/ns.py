@@ -96,7 +96,7 @@ rho1 = 1000.0 / rhoref
 # in LS
 rho2 = 100.0 / rhoref
 # surface tension
-sigma = 24.5 
+sigma = 18.0 
 # min of dens.
 chi = 0.01 / rhoref
 
@@ -180,44 +180,45 @@ while t <= T + DOLFIN_EPS:
                                 _adv_scheme="implicit_euler")
 
     Ttens = (Identity(2) - outer(n, n)) * ls1*(1.0-ls1) 
+
     ### Olsson 2007
     # tentative velocity
     f = pow(1.0 / froude, 2) * rho(ls1) * Constant((0, -1.0))
-    # F1 = (1.0 / dt_) * inner(rho(ls1) * u - rho(ls0) * u0, u_t) * dx \
-    #      - inner(dot(grad(u_t), u0), rho(ls1) * u) * dx \
-    #      - div(u_t)*p0 * dx \
-    #      + 1.0 / reynolds * inner(nu(ls1) * sym(grad(u)), grad(u_t)) * dx \
-    #      + 1.0 / weber * sigma * inner(Ttens, grad(u_t)) * dx \
-    #      - inner(f, u_t) * dx
-    # a1 = lhs(F1)
-    # L1 = rhs(F1)
+    F1 = (1.0 / dt_) * inner(rho(ls1) * u - rho(ls0) * u0, u_t) * dx \
+         - inner(dot(grad(u_t), u0), rho(ls1) * u) * dx \
+         - div(u_t)*p0 * dx \
+         + 1.0 / reynolds * inner(nu(ls1) * sym(grad(u)), grad(u_t)) * dx \
+         + 1.0 / weber * sigma * inner(Ttens, grad(u_t)) * dx \
+         - inner(f, u_t) * dx
+    a1 = lhs(F1)
+    L1 = rhs(F1)
 
-    # # pressure corr
-    # a2 = 1.0 / rho(ls1) * inner(grad(p), grad(p_t)) * dx
-    # L2 = -(1.0 / dt_) * inner(div(u1), p_t) * dx + 1.0 / rho(ls1) * inner(grad(p0), grad(p_t)) * dx
+    # pressure corr
+    a2 = 1.0 / rho(ls1) * inner(grad(p), grad(p_t)) * dx
+    L2 = -(1.0 / dt_) * inner(div(u1), p_t) * dx + 1.0 / rho(ls1) * inner(grad(p0), grad(p_t)) * dx
 
-    # #  velocity corr
-    # a3 = inner(u, u_t) * dx
-    # L3 = inner(u1, u_t) * dx - dt_ * inner(grad(p1 - p0), u_t) / (rho(ls1)) * dx
+    #  velocity corr
+    a3 = inner(u, u_t) * dx
+    L3 = inner(u1, u_t) * dx - dt_ * inner(grad(p1 - p0), u_t) / (rho(ls1)) * dx
 
-    # A1 = assemble(a1)
-    # A2 = assemble(a2)
-    # A3 = assemble(a3)
+    A1 = assemble(a1)
+    A2 = assemble(a2)
+    A3 = assemble(a3)
 
-    # print "Computing tentative velocity..."
-    # b1 = assemble(L1)
-    # [bc.apply(A1, b1) for bc in bcu]
-    # solve(A1, u1.vector(), b1, 'mumps')
+    print "Computing tentative velocity..."
+    b1 = assemble(L1)
+    [bc.apply(A1, b1) for bc in bcu]
+    solve(A1, u1.vector(), b1, 'gmres')
 
-    # print "Computing pressure correction..."
-    # b2 = assemble(L2)
-    # [bc.apply(A2, b2) for bc in bcp]
-    # solve(A2, p1.vector(), b2, 'mumps')
+    print "Computing pressure correction..."
+    b2 = assemble(L2)
+    [bc.apply(A2, b2) for bc in bcp]
+    solve(A2, p1.vector(), b2, 'gmres')
 
-    # print "Computing velocity correction..."
-    # b3 = assemble(L3)
-    # [bc.apply(A3, b3) for bc in bcu]
-    # solve(A3, u1.vector(), b3, 'mumps')
+    print "Computing velocity correction..."
+    b3 = assemble(L3)
+    [bc.apply(A3, b3) for bc in bcu]
+    solve(A3, u1.vector(), b3, 'gmres')
     ### Olsson 2007 END
 
     ### Fenics demo Chorin
@@ -266,34 +267,34 @@ while t <= T + DOLFIN_EPS:
     # Fenics demo Chorin END
 
     ### Guermond 2008
-    F1 = 1/dt*inner(0.5*(rho(ls0)+rho(ls1))*u, u_t)*dx \
-        + 1/reynolds*nu(ls1)*inner(grad(u), grad(u_t))*dx \
-        + inner(dot(rho(ls1)*u0, grad(u)), u_t)*dx \
-        + 0.5*inner(div(rho(ls1)*u0)*u, u_t)*dx \
-        + inner(grad(p0 + psi0), u_t)*dx \
-        - 0.0*inner(f, u_t)*dx \
-        - 1/dt*inner(rho(ls0)*u0, u_t)*dx \
-        + 0.0 / weber * sigma * inner(Ttens, grad(u_t)) * dx
-    a1 = lhs(F1)
-    L1 = rhs(F1)
-    
-    A1 = assemble(a1)
-    b1 = assemble(L1)
-    [bc.apply(A1, b1) for bc in bcu]
-    solve(A1, u1.vector(), b1, "gmres", "default")
-    
-    F2 = inner(grad(psi), grad(psi_t))*dx \
-        - chi/dt*inner(u1, grad(psi_t))*dx
-    
-    a2 = lhs(F2)
-    L2 = rhs(F2)
-    
-    A2 = assemble(a2)
-    b2 = assemble(L2)
-    [bc.apply(A2, b2) for bc in []]
-    solve(A2, psi1.vector(), b2, "gmres", "default")
-    
-    p1.assign(project(p0 + psi1, P))
+    # F1 = 1/dt*inner(0.5*(rho(ls0)+rho(ls1))*u, u_t)*dx \
+    #     + 1/reynolds*nu(ls1)*inner(grad(u), grad(u_t))*dx \
+    #     + inner(dot(rho(ls1)*u0, grad(u)), u_t)*dx \
+    #     + 0.5*inner(div(rho(ls1)*u0)*u, u_t)*dx \
+    #     + inner(grad(p0 + psi0), u_t)*dx \
+    #     - 0.0*inner(f, u_t)*dx \
+    #     - 1/dt*inner(rho(ls0)*u0, u_t)*dx \
+    #     + 1.0 / weber * sigma * inner(Ttens, grad(u_t)) * dx
+    # a1 = lhs(F1)
+    # L1 = rhs(F1)
+    # 
+    # A1 = assemble(a1)
+    # b1 = assemble(L1)
+    # [bc.apply(A1, b1) for bc in bcu]
+    # solve(A1, u1.vector(), b1, "gmres", "default")
+    # 
+    # F2 = inner(grad(psi), grad(psi_t))*dx \
+    #     - chi/dt*inner(u1, grad(psi_t))*dx
+    # 
+    # a2 = lhs(F2)
+    # L2 = rhs(F2)
+    # 
+    # A2 = assemble(a2)
+    # b2 = assemble(L2)
+    # [bc.apply(A2, b2) for bc in []]
+    # solve(A2, psi1.vector(), b2, "gmres", "default")
+    # 
+    # p1.assign(project(p0 + psi1, P))
 		
 
     ### Guermond 2008 END

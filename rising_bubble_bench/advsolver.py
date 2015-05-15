@@ -11,7 +11,8 @@ import time
 def advsolve(_mesh, _ls_space, _normal_space, _size_ref, _v, _init_ls,
              _dt=0.1, _t_end=0.1, _dtau=0.1, _tau_end=10, _norm_eps=0.0001,
              _adv_scheme="implicit_euler", _reinit_scheme="implicit_euler",
-             _eps=0.01, _bcs=None, _plot=True, _log_level=30, _bcs_reinit=None):
+             _eps=0.01, _bcs=None, _plot=True, _log_level=30, _bcs_reinit=None,
+             _break_norm=0.0001):
     """
 
     Solve advection equation for jump Level-set
@@ -106,7 +107,7 @@ def advsolve(_mesh, _ls_space, _normal_space, _size_ref, _v, _init_ls,
             phires.assign(phireinit)
             tau += _dtau
 
-            if norm(assemble(f), "L2") < 0.001:
+            if norm(assemble(f), "L2") < _break_norm:
                 print "Reinitialization computation time: {:.3f}s".format(time.time() - startreinit)
                 break
 

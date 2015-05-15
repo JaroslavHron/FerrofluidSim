@@ -1,0 +1,2 @@
+[1] Conservative level set for two phase flow 1,2; Olsson, Kreiss
+[2] A discontinous Galerkin conservative level set scheme for interface capturing in multiphase flows
