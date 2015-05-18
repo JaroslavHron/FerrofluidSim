@@ -1,0 +1,25 @@
+\chapter{The Finite element method, FEM}
+\section{Problem definition}
+\par We are interested in a solution of a partial differential equations of the type 
+$$\mathcal{L}\mathbf{u(x)} = \mathbf{f(x)},~\forall \mathbf{x}\in\Omega$$
+on a given domain $\Omega$, where $\mathcal{L}$ is a linear differential operator, 
+${\mathbf{u} = \mathbf{u}(x_1,\ldots,x_n)=:\mathbf{u(x)},}$ 
+where 
+${\mathbf{u}:[0,T]\times\Omega\mapsto\Omega}$ 
+is some vector-valued function and 
+${\mathbf{f} = \mathbf{f}(x_1,\ldots,x_n)=:\mathbf{f(x)}},$
+$ {\mathbf{f}\colon [0,T] \times \Omega \mapsto \Omega}$ 
+vector-valued right hand side.
+\par It is necessary to impose boundary conditions on the boundary $\partial\Omega$ of the domain. These conditions are usually of type \textit{Dirichlet}, so that
+$$ \mathbf{u(x)} = \mathbf{b_D(x)},~\forall \mathbf{x} \in \partial\Omega $$
+where $\mathbf{b_D(x)}$ is some prescribed function. Another type of the boundary condition is so called \textit{Neumann}, where
+$$ \nabla \mathbf{u(x)}\cdot\mathbf{n(x)} = \mathbf{b_N(x)},~\forall \mathbf{x}\in\partial\Omega $$
+where $\mathbf{n(x)}$ is unit normal to the boundary.
+\par We define the inner product of two functions well defined on $\Omega$ 
+$$ \langle f,g \rangle := \int_\Omega fg ~\mathrm{d\mathbf{x}} $$
+and norm induced by the inner product
+$$||f|| := \sqrt{\langle f,f \rangle}$$
+
+\section{Weak solution and basis, variational formulation}
+\section{Principles and algorithm}
+\section{Finite element spaces}

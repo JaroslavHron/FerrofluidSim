@@ -1,0 +1,3 @@
+latexmk thesis.tex
+dvipdf thesis.dvi
+rm -f *.aux *.log *.out

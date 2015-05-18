@@ -1,0 +1,74 @@
+\chapter{The Finite element method, FEM}
+\section{Problem definition}
+\par We are interested in a solution of a partial differential equations of the type 
+$$\mathcal{L}(\mathbf{u(x)}) = \mathbf{f(x)},~\forall \mathbf{x}\in\Omega$$
+on a given domain $\Omega$, where $\mathcal{L}$ is a linear differential operator, 
+${\mathbf{u} = \mathbf{u}(x_1,\ldots,x_n)=:\mathbf{u(x)},}$ 
+is some tensor-valued function and 
+${\mathbf{f} = \mathbf{f}(x_1,\ldots,x_n)=:\mathbf{f(x)}},$
+tensor-valued right hand side.
+
+\par It is necessary to impose boundary conditions on the boundary $\partial\Omega$ of the domain. These conditions are usually of type \textit{Dirichlet}, so that
+
+$$ \mathbf{u(x)} = \mathbf{b_D(x)},~\forall \mathbf{x} \in \partial\Omega $$
+
+where $\mathbf{b_D(x)}$ is some prescribed function. Another type of the boundary condition is so called \textit{Neumann}, where
+
+$$ \nabla \mathbf{u(x)}\cdot\mathbf{n(x)} = \mathbf{b_N(x)},~\forall \mathbf{x}\in\partial\Omega $$
+
+where $\mathbf{n(x)}$ is unit normal to the boundary.
+
+\section{Weak solution and basis, variational formulation}
+
+\par Yet, we didn't define function spaces for the functions in the problems like (PDE DEF). 
+This is very important part and plays significant role in the finite element method.
+\par Let us find such solutions to our problem, that all the desired functions $\mathbf{u}$ are in some space $\mathcal{S}$.
+It is reasonable, to suppose, that the space is rich enough, to contain all the solutions, but the choice of this space is still up to us. 
+\par We define the inner product of two functions well defined on $\Omega$ 
+
+$$ \langle \mb f(\mb x),\mb g(\mb x) \rangle := \int_\Omega \mb f(\mb x) \mb g(\mb x) ~\mathrm{d\mathbf{x}} $$
+
+and norm induced by the inner product
+
+$$||\mb f(\mb x)|| := \sqrt{\langle \mb f(\mb x),\mb f(\mb x)\rangle}.$$
+
+We say, that $\mathbf{u}$ is a \textbf{weak solution} to the problem (PDE), if
+$$ \langle \mathcal{L}(\mathbf{u}(\mb x)) - \mathbf{f}(\mb x), \mathbf{s}(\mb x) \rangle = 0,~\forall \mathbf{s}\in\mathcal{S}. $$
+
+\par Function $\mathbf{s}$ is often refered as a \textit{test function}. It is clear, that the space $\mathcal{S}$ is not of finite dimension. This is a very restrictive condition. 
+One might try to find an approximation of a solution, $\mb{\tilde u}$ in a finite dimensional subspace, say $\mathcal{S}_n$, where $n \in \mathbb{N}_1$ is a dimension of this space. Let then $\{s_i\}, i=1,\ldots,n$
+be the \textit{basis} of this space, so each function from our subspace $\mathcal{S}_n$ can be expressed as a linear combination of the basis functions
+$$ \mathbf{\tilde u(\mb x)} = c_i\mathbf s_i(\mb x),~ \forall \mb{w} \in \mathcal{S}_h, $$
+where summation convention is used.
+
+\par The equation (PDE VAR) could be written in terms of the variational formulation. If we let
+$$ L(\mb s(\mb x)) := \int_\Omega \mb s (\mb x) \mb f(\mb x) \mathrm d \mb x $$
+and
+$$ a(\mb u(\mb x), \mb s(\mb x)) := \int_\Omega (\mathcal L (\mb{\tilde u(\mb x)}) \mb s (\mb x) \mathrm d \mb x, $$
+the problem (PDE) becomes an equality of the (uni)linear and bilinear form. The linearity of the forms is clear from the linearity of the Lebesgue integral. 
+
+\section{Principles and algorithm}
+
+\par We are thus interested in seeking a solutions of (PDE VAR). This can be rewritten taking $\mb s_j$ as the test function
+$$ \langle \mathcal L (\mb{\tilde u(\mb x)}), \mb s_j(\mb x) \rangle = \langle \mb f(\mb x), \mb s_j(\mb x) \rangle $$
+and decomposing approximate solution into our basis
+
+\begin{align*}
+\langle \mathcal L (c_i \mb s_i(\mb x)), \mb s_j(\mb x) \rangle &= \langle \mb f(\mb x), \mb s_j(\mb x) \rangle \\
+c_i \langle \mathcal L (\mb s_i(\mb x)), \mb s_j(\mb x) \rangle &= \langle \mb f(\mb x), \mb s_j(\mb x) \rangle
+\end{align*}
+We let
+$$ \mbb A := A_{ij} := \langle \mathcal L(\mb s_i(\mb x), \mb s_j(\mb x)) \rangle, $$
+$$ \mb b := \langle \mb f(\mb x), \mb s_j(\mb x) \rangle $$
+and 
+$$ \mb c := \{c_i\} $$
+set of the coefficients we are interested in. This is clearly a system of the equations known from linear algebra, $\mbb A \mb c = \mb b.$
+
+\par We have derived the set of the equations that solves our problem in sense of a weak solution given by the condition (GALERKIN). 
+
+\par Let suppose, for the sake of simplicity, that $\Omega \subset \mbb R^2$. 
+It is evident, that we have chosen to find a solution of two dimensional spatial argument. This formalism
+Integral over $\Omega$ induced by the inner product are decomposed into the sum of an integral over subdomains of $\Omega$. 
+Such decomposition is done into triangles, e.g. a triangulation in 
+
+\section{Finite element spaces}

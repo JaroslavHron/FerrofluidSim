@@ -9,7 +9,7 @@ import time
 
 
 def advsolve(_mesh, _ls_space, _normal_space, _size_ref, _v, _init_ls,
-             _dt=0.1, _t_end=0.1, _dtau=0.1, _tau_end=10, _norm_eps=0.0001,
+             _dt=0.1, _t_end=0.1, _dtau=0.1, _tau_end=10, 
              _adv_scheme="implicit_euler", _reinit_scheme="implicit_euler",
              _eps=0.01, _bcs=None, _plot=True, _log_level=30, _bcs_reinit=None,
              _break_norm=0.0001):
@@ -29,8 +29,6 @@ def advsolve(_mesh, _ls_space, _normal_space, _size_ref, _v, _init_ls,
     :param _dtau: reinitialization time step size
     :param _tau_end: reinitialization time end, usually some big number,
                      ends on stationary state condition
-    :param _norm_eps: mollifier for divergent 1/(grad(phi))
-                      -> 1/sqrt(_norm_eps^2 + grad(phi)^2)
     :param _adv_scheme: advection time discretization scheme,
                         choices: implicit_euler, explicit_euler, crank_nicholson
     :param _reinit_scheme: reinitialization time discretization scheme,
@@ -89,9 +87,9 @@ def advsolve(_mesh, _ls_space, _normal_space, _size_ref, _v, _init_ls,
         print "Computing unit normal before reinitialization..."
         gradphi = grad(phires)
         start = time.time()
-        n.assign(project(gradphi / sqrt(pow(_norm_eps, 2) + dot(gradphi, gradphi)), _normal_space))
+        n.assign(project(gradphi / sqrt(dot(gradphi, gradphi)), _normal_space))
         print "Normal computation time: {:.3f}s.".format(time.time() - start)
-
+        plot(n, key="adv normal", title="Normal before reinit")
         # reinitialization sub-time step
         tau = _dtau
         while tau <= _tau_end:
@@ -116,7 +114,7 @@ def advsolve(_mesh, _ls_space, _normal_space, _size_ref, _v, _init_ls,
     print "Computing unit normal after reinitialization..."
     gradphi = grad(phires)
     start = time.time()
-    n.assign(project(gradphi / sqrt(pow(_norm_eps, 2) + dot(gradphi, gradphi)), _normal_space))
+    n.assign(project(gradphi / sqrt(dot(gradphi, gradphi)), _normal_space))
     print "Normal computation time: {:.3f}s.".format(time.time() - start)
 
     print ("\n###########################  \n"

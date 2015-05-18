@@ -1,0 +1,24 @@
+\contentsline {chapter}{Introduction}{2}{chapter*.2}
+\contentsline {chapter}{\numberline {1}Ferrofluids}{3}{chapter.1}
+\contentsline {section}{\numberline {1.1}Introduction}{3}{section.1.1}
+\contentsline {section}{\numberline {1.2}Ferrohydrodynamics}{3}{section.1.2}
+\contentsline {chapter}{\numberline {2}The Finite element method, FEM}{4}{chapter.2}
+\contentsline {section}{\numberline {2.1}Problem definition}{4}{section.2.1}
+\contentsline {section}{\numberline {2.2}Weak solution and basis, variational formulation}{4}{section.2.2}
+\contentsline {section}{\numberline {2.3}Principles and algorithm}{5}{section.2.3}
+\contentsline {section}{\numberline {2.4}Finite element spaces}{5}{section.2.4}
+\contentsline {chapter}{\numberline {3}The Navier-Stokes equations}{6}{chapter.3}
+\contentsline {section}{\numberline {3.1}Dimensionless form}{6}{section.3.1}
+\contentsline {section}{\numberline {3.2}Numerical solution and projection methods}{6}{section.3.2}
+\contentsline {section}{\numberline {3.3}Finite element formulation}{6}{section.3.3}
+\contentsline {chapter}{\numberline {4}The Level-Set method}{7}{chapter.4}
+\contentsline {section}{\numberline {4.1}Level-set advection}{7}{section.4.1}
+\contentsline {section}{\numberline {4.2}Conservation of mass, reinitialization}{7}{section.4.2}
+\contentsline {chapter}{\numberline {5}Rising bubble benchmark}{8}{chapter.5}
+\contentsline {section}{\numberline {5.1}Problem definition}{8}{section.5.1}
+\contentsline {section}{\numberline {5.2}Results}{8}{section.5.2}
+\contentsline {chapter}{Conclusion}{9}{chapter*.3}
+\contentsline {chapter}{Bibliography}{10}{chapter*.4}
+\contentsline {chapter}{List of Tables}{11}{chapter*.5}
+\contentsline {chapter}{List of Abbreviations}{12}{chapter*.6}
+\contentsline {chapter}{Attachments}{13}{chapter*.7}
