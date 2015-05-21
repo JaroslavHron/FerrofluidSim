@@ -343,10 +343,10 @@ while t < T + DOLFIN_EPS:
     ### Guermond 2008 END
 
     # advance LS
-    ls1, n = advsolver.advsolve(mesh, LS, N, d_ref, u1, ls0,
-                                _dtau=dtau, _eps=eps, 
-                                _dt=dt, _t_end=dt, _bcs=[DirichletBC(LS, 1.0, top_inlet_boundary)],
-                                _adv_scheme="implicit_euler")
+    #ls1, n = advsolver.advsolve(mesh, LS, N, d_ref, u1, ls0,
+    #                            _dtau=dtau, _eps=eps, 
+    #                            _dt=dt, _t_end=dt, _bcs=[DirichletBC(LS, 1.0, top_inlet_boundary)],
+    #                            _adv_scheme="implicit_euler")
     
     u1.rename("u", "velocity")
     ls0.rename("ls", "level-set")
