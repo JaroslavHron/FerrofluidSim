@@ -89,7 +89,7 @@ def advsolve(_mesh, _ls_space, _normal_space, _size_ref, _v, _init_ls,
         start = time.time()
         n.assign(project(gradphi / sqrt(dot(gradphi, gradphi)), _normal_space))
         print "Normal computation time: {:.3f}s.".format(time.time() - start)
-        plot(n, key="adv normal", title="Normal before reinit")
+        # plot(n, key="adv normal", title="Normal before reinit")
         # reinitialization sub-time step
         tau = _dtau
         while tau <= _tau_end:

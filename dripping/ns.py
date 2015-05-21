@@ -8,17 +8,40 @@ import advsolver as advsolver
 import nssolver
 import numpy as np
 import time
+from subprocess import call
+from optparse import OptionParser
+
+
+parser = OptionParser()
+parser.add_option("-d", "--density", dest="dens", help="Density of generated mesh")
+parser.add_option("-t", "--time-step", dest="dt", help="Time step in time discretization")
+(options, args) = parser.parse_args()
 
 start_time = time.time()
 
+if options.dens > 0:
+    dens = float(options.dens)
+else:
+    dens = 0.05
+
+T = 10.0
+if options.dt > 0:
+    dt = float(options.dt)
+else:
+    dt = 0.01
+
+print "Generating mesh of density {}...".format(dens)
+call("gmsh -2 -clmax {} ./mesh.geo; python ../libs/dolfin-convert.py ./mesh.msh ./mesh.xml".format(dens), shell=True)
+print "Mesh generation done."
+
 # import mesh
-d_ref = 25
-mesh = Mesh("mesh3.xml")
+d_ref = int(1.0/dens)
+mesh = Mesh("mesh.xml")
 
 # create results files
-ufile = File("results/velocity.pvd")
-pfile = File("results/pressure.pvd")
-lsfile = File("results/ls.pvd")
+ufile = File("results/velocity.xdmf")
+pfile = File("results/pressure.xdmf")
+lsfile = File("results/ls.xdmf")
 
 # function spaces
 # pressure
@@ -100,7 +123,7 @@ patm = 0.0 * rhoref * uref * uref  # Pa
 # out LS
 nu1 = 1.78e-2 / nuref
 # in LS 
-nu2 = 1.0e-2 / nuref
+nu2 = 1.0e-1 / nuref
 # density
 # out LS
 rho1 = 1.0 / rhoref
@@ -132,11 +155,6 @@ print "Nondimensional numbers:"
 print " Re={:.3f},\n We={:.3f},\n Fr={:.3f}".format(reynolds, weber, froude)
 print "########################"
 
-
-# N-S iteration
-T = 10.0
-dt = 0.01
-
 # reinit
 d = 0.1
 dtau = pow(1 / float(d_ref), 1 + d) / 2  # Olsson Kreiss --> dtau = ((dx)^(1+d))/2
@@ -159,8 +177,8 @@ top = DirichletBC(P, patm, top_boundary)
 
 # merge bcs
 bcu = [DirichletBC(U, Constant((0.0, 0.0)), left_inlet_boundary), DirichletBC(U, Constant((0.0, 0.0)), right_inlet_boundary), 
-       DirichletBC(U.sub(1), 0.0, top_boundary), DirichletBC(U, Constant((0.0, -0.2)), top_inlet_boundary),
-       DirichletBC(U, Constant((0.0,0.0)), left_boundary), DirichletBC(U, Constant((0.0, 0.0)), right_boundary)]
+       DirichletBC(U.sub(1), 0.0, top_boundary), DirichletBC(U, Constant((0.0, -0.5)), top_inlet_boundary),
+       DirichletBC(U.sub(0), Constant(0.0), left_boundary), DirichletBC(U.sub(0), Constant(0.0), right_boundary)]
 bcp = [DirichletBC(P, 0.0, bottom_boundary)]
 
 radius = 0.4
@@ -199,10 +217,10 @@ while t < T + DOLFIN_EPS:
                                 _adv_scheme="implicit_euler")
 
     Ttens = (Identity(2) - outer(n, n)) * sqrt(pow(0.00001, 2) + dot(grad(ls1), grad(ls1)))
-    plot(div(Ttens), key="normal")
+    #plot(div(Ttens), key="normal")
     ### Olsson 2007
     # tentative velocity
-    f = 0.0*pow(1.0 / froude, 2) * rho(ls1) * Constant((0, -1.0))*ls1
+    f = 1.0*pow(1.0 / froude, 2) * rho(ls1) * Constant((0, -1.0))*ls1
     #F1 = (1.0 / dt_) * inner(rho(ls1) * u - rho(ls0) * u0, u_t) * dx \
     #     - inner(dot(grad(u_t), u0), rho(ls1) * u) * dx \
     #     - div(u_t)*p0 * dx \
@@ -329,8 +347,11 @@ while t < T + DOLFIN_EPS:
                                 _dtau=dtau, _eps=eps, 
                                 _dt=dt, _t_end=dt, _bcs=[DirichletBC(LS, 1.0, top_inlet_boundary)],
                                 _adv_scheme="implicit_euler")
-
+    
+    u1.rename("u", "velocity")
+    ls0.rename("ls", "level-set")
     lsfile << ls0
+    ufile << u1
 
     u0.assign(u1)
     p0.assign(p1)
