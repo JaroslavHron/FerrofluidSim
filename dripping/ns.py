@@ -5,6 +5,7 @@
 
 from dolfin import *
 import advsolver as advsolver
+import nssolver
 import numpy as np
 import time
 
@@ -134,10 +135,10 @@ print "########################"
 
 # N-S iteration
 T = 10.0
-dt = 0.2
+dt = 0.01
 
 # reinit
-d = 0.0
+d = 0.1
 dtau = pow(1 / float(d_ref), 1 + d) / 2  # Olsson Kreiss --> dtau = ((dx)^(1+d))/2
 eps = pow(1 / float(d_ref), 1 - d) / 2  # Olsson Kreiss --> eps = ((dx)^(1-d))/2
 
@@ -158,19 +159,19 @@ top = DirichletBC(P, patm, top_boundary)
 
 # merge bcs
 bcu = [DirichletBC(U, Constant((0.0, 0.0)), left_inlet_boundary), DirichletBC(U, Constant((0.0, 0.0)), right_inlet_boundary), 
-       DirichletBC(U.sub(1), 0.0, top_boundary), DirichletBC(U, Constant((0.0, -0.1)), top_inlet_boundary)]
-bcp = [DirichletBC(P, 0.0, bottom_boundary), DirichletBC(P, 8.0, top_inlet_boundary)]
+       DirichletBC(U.sub(1), 0.0, top_boundary), DirichletBC(U, Constant((0.0, -0.2)), top_inlet_boundary),
+       DirichletBC(U, Constant((0.0,0.0)), left_boundary), DirichletBC(U, Constant((0.0, 0.0)), right_boundary)]
+bcp = [DirichletBC(P, 0.0, bottom_boundary)]
 
 radius = 0.4
 initx = 0.5
-inity = 1.4
+inity = 2.4
 phiinit = Expression(
     "1/( 1+exp((sqrt(2.0*(x[0]-{0})*(x[0]-{0})+(x[1]-{1})*(x[1]-{1}))-{2})/{3}))".format(initx, inity, radius, eps))
 ls0.assign(project(phiinit, LS))
 
 # LS init
 ls0, n = advsolver.advsolve(mesh, LS, N, d_ref, u0, ls0, _dtau=dtau, _eps=eps,
-                            _norm_eps=0.00001,
                             _dt=dt, _t_end=dt, _bcs=[],
                             _adv_scheme="implicit_euler")
 
@@ -179,10 +180,10 @@ u0_init = Constant((0.0, 0.0))
 u0.assign(project(u0_init, U))
 
 # pressure init
-# pinit1 = Constant(0.0)
-# pinit2 = Constant(1.0)
-# p_init = pinit1 + (pinit2 - pinit1) * ls0
-# p0.assign(project(p_init, P))
+#pinit1 = Constant(0.0)
+#pinit2 = 0.00054
+#p_init = pinit1 + (pinit2 - pinit1) * ls0
+#p0.assign(project(p_init, P))
 
 psi0.assign(project(Constant(0.0), LS))
 
@@ -193,15 +194,15 @@ while t < T + DOLFIN_EPS:
 
     # advance LS
     ls1, n = advsolver.advsolve(mesh, LS, N, d_ref, u0, ls0,
-                                _dtau=dtau, _eps=eps, _norm_eps=0.00001,
-                                _dt=dt, _t_end=dt, _bcs=[DirichletBC(LS, 0.0, top_inlet_boundary)],
+                                _dtau=dtau, _eps=eps, 
+                                _dt=dt, _t_end=dt, _bcs=[DirichletBC(LS, 1.0, top_inlet_boundary)],
                                 _adv_scheme="implicit_euler")
 
     Ttens = (Identity(2) - outer(n, n)) * sqrt(pow(0.00001, 2) + dot(grad(ls1), grad(ls1)))
     plot(div(Ttens), key="normal")
     ### Olsson 2007
     # tentative velocity
-    f = 0.0*pow(1.0 / froude, 2) * rho(ls1) * Constant((0, -1.0))
+    f = 0.0*pow(1.0 / froude, 2) * rho(ls1) * Constant((0, -1.0))*ls1
     #F1 = (1.0 / dt_) * inner(rho(ls1) * u - rho(ls0) * u0, u_t) * dx \
     #     - inner(dot(grad(u_t), u0), rho(ls1) * u) * dx \
     #     - div(u_t)*p0 * dx \
@@ -285,42 +286,48 @@ while t < T + DOLFIN_EPS:
     # Fenics demo Chorin END
 
     ### Guermond 2008
-    F1 = 1/dt*inner(0.5*(rho(ls0)+rho(ls1))*u, u_t)*dx \
-        + 1/reynolds*nu(ls1)*inner(grad(u), grad(u_t))*dx \
-        + inner(dot(rho(ls1)*u0, grad(u)), u_t)*dx \
-        + 0.5*inner(div(rho(ls1)*u0)*u, u_t)*dx \
-        + inner(grad(p0 + psi0), u_t)*dx \
-        - inner(f, u_t)*dx \
-        - 1/dt*inner(rho(ls0)*u0, u_t)*dx \
-        + 1.0 / weber * sigma * inner(Ttens, grad(u_t)) * dx
-    a1 = lhs(F1)
-    L1 = rhs(F1)
     
-    A1 = assemble(a1)
-    b1 = assemble(L1)
-    [bc.apply(A1, b1) for bc in bcu]
-    solve(A1, u1.vector(), b1, "gmres", "default")
+    # print assemble(1.0/weber*sigma*tr(Ttens)*dx)
+
+    # F1 = 1/dt*inner(0.5*(rho(ls0)+rho(ls1))*u, u_t)*dx \
+    #     + 1/reynolds*nu(ls1)*inner(grad(u), grad(u_t))*dx \
+    #     + inner(dot(rho(ls1)*u0, grad(u)), u_t)*dx \
+    #     + 0.5*inner(div(rho(ls1)*u0)*u, u_t)*dx \
+    #     - inner((p0 + psi0), div(u_t))*dx \
+    #     - inner(f, u_t)*dx \
+    #     - 1/dt*inner(rho(ls0)*u0, u_t)*dx \
+    #     + 1.0 / weber * sigma * inner(Ttens, grad(u_t)) * dx
+    # a1 = lhs(F1)
+    # L1 = rhs(F1)
     
-    F2 = inner(grad(psi), grad(psi_t))*dx \
-        - chi/dt*inner(u1, grad(psi_t))*dx
+    # A1 = assemble(a1)
+    # b1 = assemble(L1)
+    # [bc.apply(A1, b1) for bc in bcu]
+    # solve(A1, u1.vector(), b1, "gmres", "default")
     
-    a2 = lhs(F2)
-    L2 = rhs(F2)
+    # F2 = inner(grad(psi), grad(psi_t))*dx \
+    #     - chi/dt*inner(u1, grad(psi_t))*dx
     
-    A2 = assemble(a2)
-    b2 = assemble(L2)
-    [bc.apply(A2, b2) for bc in []]
-    solve(A2, psi1.vector(), b2, "gmres", "default")
+    # a2 = lhs(F2)
+    # L2 = rhs(F2)
     
-    p1.assign(project(p0 + psi1, P))
-		
+    # A2 = assemble(a2)
+    # b2 = assemble(L2)
+    # [bc.apply(A2, b2) for bc in []]
+    # solve(A2, psi1.vector(), b2, "gmres", "default")
+    
+    # p1.assign(project(p0 + psi1, P))
+
+    
+    u1, p1 = nssolver.nssolve(mesh, P, U, ls0, ls1, "olsson", froude, reynolds, weber,
+                              rho2, rho1, nu2, nu1, sigma, u0, p0, n, dt_, bcu, bcp)		
 
     ### Guermond 2008 END
 
     # advance LS
     ls1, n = advsolver.advsolve(mesh, LS, N, d_ref, u1, ls0,
-                                _dtau=dtau, _eps=eps, _norm_eps=0.00001,
-                                _dt=dt, _t_end=dt, _bcs=[DirichletBC(LS, 0.0, top_inlet_boundary)],
+                                _dtau=dtau, _eps=eps, 
+                                _dt=dt, _t_end=dt, _bcs=[DirichletBC(LS, 1.0, top_inlet_boundary)],
                                 _adv_scheme="implicit_euler")
 
     lsfile << ls0

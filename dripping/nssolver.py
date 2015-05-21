@@ -51,7 +51,7 @@ def nssolve(_mesh, _P, _U, _ls0, _ls1, _method, _froude, _reynolds,
              - inner(dot(grad(u_t), _u0), rho(_ls1) * u) * dx \
              - div(u_t)*_p0 * dx \
              + 1.0 / _reynolds * inner(nu(_ls1) * sym(grad(u)), grad(u_t)) * dx \
-             + 1.0 / _weber * _sigma * inner((Identity(2) - outer(_n, _n)) * 4.0 * _ls1*(1.0-_ls1), grad(u_t)) * dx \
+             + 1.0 / _weber * _sigma * inner((Identity(2) - outer(_n, _n)) *sqrt(dot(grad(_ls1), grad(_ls1))), grad(u_t)) * dx \
              - inner(f, u_t) * dx
         a1 = lhs(F1)
         L1 = rhs(F1)
@@ -71,17 +71,17 @@ def nssolve(_mesh, _P, _U, _ls0, _ls1, _method, _froude, _reynolds,
         print "Computing tentative velocity..."
         b1 = assemble(L1)
         [bc.apply(A1, b1) for bc in _bcu]
-        solve(A1, u1.vector(), b1, 'gmres')
+        solve(A1, u1.vector(), b1, 'gmres', "ilu")
 
         print "Computing pressure correction..."
         b2 = assemble(L2)
         [bc.apply(A2, b2) for bc in _bcp]
-        solve(A2, p1.vector(), b2, "gmres")
+        solve(A2, p1.vector(), b2, "gmres", "amg")
 
         print "Computing velocity correction..."
         b3 = assemble(L3)
         [bc.apply(A3, b3) for bc in _bcu]
-        solve(A3, u1.vector(), b3, 'gmres')
+        solve(A3, u1.vector(), b3, 'gmres', "ilu")
 
         print("##############################\n"
               " Navier-Stokes solver end     \n"

@@ -13,13 +13,13 @@ import time
 start_time = time.time()
 
 # import mesh
-d_ref = 100
+d_ref = 20
 mesh = Mesh("mesh.xml")
 
 # create results files
-ufile = File("results/velocity.pvd")
-pfile = File("results/pressure.pvd")
-lsfile = File("results/ls.pvd")
+ufile = File("results/velocity.xdmf")
+pfile = File("results/pressure.xdmf")
+lsfile = File("results/ls.xdmf")
 
 # function spaces
 # pressure
@@ -119,12 +119,12 @@ print "########################"
 
 # N-S iteration
 T = 3.0
-dt = 0.05
+dt = 0.01
 
 # reinit
 d = 0.08
-dtau = pow(1 / float(d_ref), 1 + d) / 2  # Olsson Kreiss --> dtau = ((dx)^(1+d))/2
-eps = pow(1 / float(d_ref), 1 - d) / 2  # Olsson Kreiss --> eps = ((dx)^(1-d))/2
+dtau = pow(1 / float(d_ref), 1 + d) / 2.0# Olsson Kreiss --> dtau = ((dx)^(1+d))/2
+eps = pow(1 / float(d_ref), 1 - d) / 2.0# Olsson Kreiss --> eps = ((dx)^(1-d))/2
 
 # boundary conds
 # merge bcs
@@ -166,7 +166,7 @@ while t <= T + DOLFIN_EPS:
     ls1, n = advsolver.advsolve(mesh, LS, N, d_ref, u0, ls0,
                                 _dtau=dtau, _eps=eps, 
                                 _dt=dt, _t_end=dt, _bcs=[],
-                                _adv_scheme="implicit_euler")
+                                _adv_scheme="implicit_euler", _break_norm=0.001)
     
     u1, p1 = nssolver.nssolve(mesh, P, U, ls0, ls1, "olsson", froude, reynolds, weber,
                               rho2, rho1, nu2, nu1, sigma, u0, p0, n, dt_, bcu, bcp)
@@ -250,13 +250,19 @@ while t <= T + DOLFIN_EPS:
     ### Guermond 2008 END
     
     # advance LS
-    ls1, n = advsolver.advsolve(mesh, LS, N, d_ref, u1, ls0,
-                                _dtau=dtau, _eps=eps, 
-                                _dt=dt, _t_end=dt, _bcs=[],
-                                _adv_scheme="implicit_euler")
+    # ls1, n = advsolver.advsolve(mesh, LS, N, d_ref, u1, ls0,
+    #                            _dtau=dtau, _eps=eps, 
+    #                            _dt=dt, _t_end=dt, _bcs=[],
+    #                            _adv_scheme="implicit_euler")
 
-    lsfile << ls0
+    u1.rename("u", "velocity")
+    p1.rename("p", "pressure")
+    ls1.rename("ls", "level-set")
 
+    lsfile << ls1
+    ufile << u1
+    pfile << p1
+    
     u0.assign(u1)
     p0.assign(p1)
     ls0.assign(ls1)
