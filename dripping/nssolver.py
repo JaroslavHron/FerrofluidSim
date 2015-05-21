@@ -71,7 +71,7 @@ def nssolve(_mesh, _P, _U, _ls0, _ls1, _method, _froude, _reynolds,
         print "Computing tentative velocity..."
         b1 = assemble(L1)
         [bc.apply(A1, b1) for bc in _bcu]
-        solve(A1, u1.vector(), b1, 'gmres', "ilu")
+        solve(A1, u1.vector(), b1, 'gmres')
 
         print "Computing pressure correction..."
         b2 = assemble(L2)
@@ -81,7 +81,7 @@ def nssolve(_mesh, _P, _U, _ls0, _ls1, _method, _froude, _reynolds,
         print "Computing velocity correction..."
         b3 = assemble(L3)
         [bc.apply(A3, b3) for bc in _bcu]
-        solve(A3, u1.vector(), b3, 'gmres', "ilu")
+        solve(A3, u1.vector(), b3, 'gmres')
 
         print("##############################\n"
               " Navier-Stokes solver end     \n"
