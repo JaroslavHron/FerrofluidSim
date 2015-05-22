@@ -39,9 +39,9 @@ d_ref = int(1.0/dens)
 mesh = Mesh("mesh.xml")
 
 # create results files
-ufile = File("results/velocity.xdmf")
-pfile = File("results/pressure.xdmf")
-lsfile = File("results/ls.xdmf")
+ufile = File("results/velocity.pvd")
+pfile = File("results/pressure.pvd")
+lsfile = File("results/ls.pvd")
 
 # function spaces
 # pressure
@@ -177,7 +177,7 @@ top = DirichletBC(P, patm, top_boundary)
 
 # merge bcs
 bcu = [DirichletBC(U, Constant((0.0, 0.0)), left_inlet_boundary), DirichletBC(U, Constant((0.0, 0.0)), right_inlet_boundary), 
-       DirichletBC(U.sub(1), 0.0, top_boundary), DirichletBC(U, Constant((0.0, -0.5)), top_inlet_boundary),
+       DirichletBC(U.sub(1), 0.0, top_boundary), DirichletBC(U, Constant((0.0, -0.1)), top_inlet_boundary),
        DirichletBC(U.sub(0), Constant(0.0), left_boundary), DirichletBC(U.sub(0), Constant(0.0), right_boundary)]
 bcp = [DirichletBC(P, 0.0, bottom_boundary)]
 
