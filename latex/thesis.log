@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=latex 2015.5.13)  20 MAY 2015 22:31
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=latex 2015.5.13)  22 MAY 2015 20:10
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -453,7 +453,7 @@ LaTeX Info: Redefining \pageref on input line 6369.
 \c@Hfootnote=\count107
 )
 
-Package hyperref Message: Driver: hdvips.
+Package hyperref Message: Driver (default): hdvips.
 
 (/usr/share/texlive/texmf-dist/tex/latex/hyperref/hdvips.def
 File: hdvips.def 2012/11/06 v6.83m Hyperref driver for dvips
@@ -562,7 +562,7 @@ Chapter 1.
  (./chap2.tex
 Chapter 2.
 
-Overfull \hbox (0.38315pt too wide) in paragraph at lines 6--12
+Overfull \hbox (0.38315pt too wide) in paragraph at lines 9--15
 \OT1/cmr/m/n/12 on a giv-en do-main $
 $, where $\OMS/cmsy/m/n/12 L$ \OT1/cmr/m/n/12 is a lin-ear dif-fer-en-tial op-e
 r-a-tor, $\OML/cmm/m/it/12 u \OT1/cmr/m/n/12 = \OML/cmm/m/it/12 u\OT1/cmr/m/n/1
@@ -573,7 +573,7 @@ r-a-tor, $\OML/cmm/m/it/12 u \OT1/cmr/m/n/12 = \OML/cmm/m/it/12 u\OT1/cmr/m/n/1
 
 
 
-]) [5] [6]
+] [5]) [6]
 \openout2 = `chap3.aux'.
 
  (./chap3.tex
@@ -633,16 +633,16 @@ p4.aux) (./chap5.aux) (./epilog.aux) (./bibliography.aux))
 Package atveryend Info: Empty hook `AtVeryEndDocument' on input line 272.
 Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 272.
 Package rerunfilecheck Info: File `thesis.out' has not changed.
-(rerunfilecheck)             Checksum: F2009657F324A3BA23D9C262CCFAE2AF;3771.
+(rerunfilecheck)             Checksum: 4CD64130B724CAE637EC3E46B0B41F7F;3949.
 Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 272.
  ) 
 Here is how much of TeX's memory you used:
- 8924 strings out of 495029
- 121134 string characters out of 6181523
- 194717 words of memory out of 5000000
- 12024 multiletter control sequences out of 15000+600000
+ 8925 strings out of 495029
+ 121147 string characters out of 6181523
+ 194920 words of memory out of 5000000
+ 12025 multiletter control sequences out of 15000+600000
  14284 words of font info for 54 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  29i,8n,30p,616b,377s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on thesis.dvi (18 pages, 38624 bytes).
+Output written on thesis.dvi (18 pages, 42604 bytes).

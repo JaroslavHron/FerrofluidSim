@@ -1,5 +1,8 @@
 \chapter{The Finite element method}
 
+\par In the following sections we give a very brief introduction into the finite element method. 
+We also refer more advanced reader who seeks more detail to [3 LINDBO].
+
 \section{Problem definition}
 
 \par We are interested in a solution of a partial differential equations of the type 
@@ -77,3 +80,18 @@ so the matrix elements become
 $$ A_{ij} = \int_\Omega \mathcal L(s_i)s_j \mathrm d \mb x = \sum_{k=1}^M \int_{T_k} \mathcal L(s_i)s_j \mathrm d \mb x.$$
 
 \section{Finite element spaces}
+
+\par The basis functions $s_i$ were not yet specified. Since the only restriction on these functions is, 
+that $\{s_i\},~i=0,\ldots,n$ is the basis of our finite dimensional subspace $\mathcal S_n$, we choose them wisely. 
+
+\par Because the system $\mbb A \mb c = \mb b$ will be solved, we would like them to vanish almost everywhere, i.e. to have non-zero value 
+only on some element(triangle) with its neighbours. This implies, that the inner product $A_{ij} = (\mathcal L(s_i), s_j)$ forms a sparse matrix.
+
+\par In the following, we refer to the \textbf{type} of the element. A type is simply a class of basis functions.
+Most common choice of this class is so called \textit{Lagrange} polynomials.
+\par The \textbf{order} is roughly the order of the interpolation polynomial.
+\par The \textbf{shape} of the finite element is the geometry that defines the decomposition of $\Omega$.
+
+\par For instance the finite element of type Lagrange, third order and triangular shape means triangulation of the $\Omega$ and  the choice of basis functions 
+that are on each triangle Lagrange cubic polynomials.
+ 

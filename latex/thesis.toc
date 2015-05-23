@@ -7,13 +7,14 @@
 \contentsline {section}{\numberline {2.2}Weak solution and basis, variational formulation}{4}{section.2.2}
 \contentsline {section}{\numberline {2.3}Principles and algorithm}{5}{section.2.3}
 \contentsline {section}{\numberline {2.4}Finite element spaces}{6}{section.2.4}
-\contentsline {chapter}{\numberline {3}The Navier-Stokes equations}{7}{chapter.3}
-\contentsline {section}{\numberline {3.1}Dimensionless form}{7}{section.3.1}
-\contentsline {section}{\numberline {3.2}Numerical solution and projection methods}{7}{section.3.2}
-\contentsline {section}{\numberline {3.3}Finite element formulation}{7}{section.3.3}
-\contentsline {chapter}{\numberline {4}The Level-Set method}{8}{chapter.4}
-\contentsline {section}{\numberline {4.1}Level-set advection}{8}{section.4.1}
-\contentsline {section}{\numberline {4.2}Conservation of mass, reinitialization}{8}{section.4.2}
+\contentsline {chapter}{\numberline {3}The Level-Set method}{7}{chapter.3}
+\contentsline {section}{\numberline {3.1}Mathematical formulation}{7}{section.3.1}
+\contentsline {section}{\numberline {3.2}Level-set advection}{7}{section.3.2}
+\contentsline {section}{\numberline {3.3}Conservation of mass, reinitialization}{7}{section.3.3}
+\contentsline {chapter}{\numberline {4}The Navier-Stokes equations}{8}{chapter.4}
+\contentsline {section}{\numberline {4.1}Dimensionless form}{8}{section.4.1}
+\contentsline {section}{\numberline {4.2}Numerical solution and projection methods}{8}{section.4.2}
+\contentsline {section}{\numberline {4.3}Finite element formulation}{8}{section.4.3}
 \contentsline {chapter}{\numberline {5}Rising bubble benchmark}{9}{chapter.5}
 \contentsline {section}{\numberline {5.1}Problem definition}{9}{section.5.1}
 \contentsline {section}{\numberline {5.2}Results}{9}{section.5.2}

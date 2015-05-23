@@ -25,14 +25,11 @@ else:
     dens = 0.05
 
 T = 10.0
+
 if options.dt > 0:
     dt = float(options.dt)
 else:
     dt = 0.01
-
-print "Generating mesh of density {}...".format(dens)
-call("gmsh -2 -clmax {} ./mesh.geo; python ../libs/dolfin-convert.py ./mesh.msh ./mesh.xml".format(dens), shell=True)
-print "Mesh generation done."
 
 # import mesh
 d_ref = int(1.0/dens)

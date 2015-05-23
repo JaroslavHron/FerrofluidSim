@@ -1,5 +1,14 @@
-\chapter{The Navier-Stokes equations}
+\chapter{The Level-Set method}
 
-\section{Dimensionless form}
-\section{Numerical solution and projection methods}
-\section{Finite element formulation}
+\par Our main goal is the simulation of two-phase flow. It is therefore evident, that some method for interface tracking must be implemented.
+The level-set method (LSM) is simple and straightforward mathematical construction that represents the surface. Recent studies [LSM]
+improved the level-set method and reduced several drawbacks of original formulation by []. The level-set method presented in our work
+conserves volume of fluid. This improvement is important if we would like to analyse the volume of droplets, jets, etc.
+
+\section{Mathematical formulation}
+
+\par Let say, $\Omega \subset \mbb R^n$. We choose a domain $\Omega_1 \subset \Omega$ that represents one fluid phase. Let then $\Omega_2 = \Omega - \Omega_1$.
+Let $\Omega_1$ 
+
+\section{Level-set advection}
+\section{Conservation of mass, reinitialization}
