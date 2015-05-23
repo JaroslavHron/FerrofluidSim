@@ -1,0 +1,1 @@
+gmsh -2 -clmax $1 mesh.geo; python ../libs/dolfin-convert.py ./mesh.msh ./mesh.xml
