@@ -46,7 +46,7 @@ def nssolve(_mesh, _P, _U, _ls0, _ls1, _method, _froude, _reynolds,
         print "--Olsson-- method chosen for Navier-Stokes solver"
 
         # tentative velocity
-        f = pow(1.0 / _froude, 2) * rho(_ls1) * Constant((0, -1.0))
+        f = _ls1*pow(1.0 / _froude, 2) * rho(_ls1) * Constant((0, -1.0))
         F1 = (1.0 / _dt) * inner(rho(_ls1) * u - rho(_ls0) * _u0, u_t) * dx \
              - inner(dot(grad(u_t), _u0), rho(_ls1) * u) * dx \
              - div(u_t)*_p0 * dx \
@@ -71,17 +71,17 @@ def nssolve(_mesh, _P, _U, _ls0, _ls1, _method, _froude, _reynolds,
         print "Computing tentative velocity..."
         b1 = assemble(L1)
         [bc.apply(A1, b1) for bc in _bcu]
-        solve(A1, u1.vector(), b1, 'gmres')
+        solve(A1, u1.vector(), b1)
 
         print "Computing pressure correction..."
         b2 = assemble(L2)
         [bc.apply(A2, b2) for bc in _bcp]
-        solve(A2, p1.vector(), b2, "gmres", "amg")
+        solve(A2, p1.vector(), b2)
 
         print "Computing velocity correction..."
         b3 = assemble(L3)
         [bc.apply(A3, b3) for bc in _bcu]
-        solve(A3, u1.vector(), b3, 'gmres')
+        solve(A3, u1.vector(), b3)
 
         print("##############################\n"
               " Navier-Stokes solver end     \n"

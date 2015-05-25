@@ -108,8 +108,8 @@ def right_inlet_boundary(x):
 
 # constants
 # dimensional ref values
-rhoref = 1000.0  # kg/m3
-nuref = 0.001  # kg/m3
+rhoref = 1.0  # kg/m3
+nuref = 1.0e-3  # kg/m3
 lref = 0.1  # m
 uref = 0.5  # m/s
 # atmospheric pressure
@@ -118,7 +118,7 @@ patm = 0.0 * rhoref * uref * uref  # Pa
 # nondim
 # dyn viscosity
 # out LS
-nu1 = 1.78e-2 / nuref
+nu1 = 1.78e-1 / nuref
 # in LS 
 nu2 = 1.0e-1 / nuref
 # density
@@ -129,7 +129,7 @@ rho2 = 1000.0 / rhoref
 # surface tension
 sigma = 0.07275
 # grav accel
-grav = 9.81/20.0
+grav = 9.81
 # min of dens.
 chi = 0.1 / rhoref
 
@@ -153,15 +153,15 @@ print " Re={:.3f},\n We={:.3f},\n Fr={:.3f}".format(reynolds, weber, froude)
 print "########################"
 
 # reinit
-d = 0.1
+d = 0.05
 dtau = pow(1 / float(d_ref), 1 + d) / 2  # Olsson Kreiss --> dtau = ((dx)^(1+d))/2
 eps = pow(1 / float(d_ref), 1 - d) / 2  # Olsson Kreiss --> eps = ((dx)^(1-d))/2
 
 # boundary conditions
-# bc_bottom = DirichletBC(S, Constant(0.0), bottom_boundary)
-# bc_top = DirichletBC(S, Constant(0.0), top_boundary)
-# bc_left = DirichletBC(S, Constant(0.0), left_boundary)
-# bc_right = DirichletBC(S, Constant(0.0), right_boundary)
+bc_bottom = DirichletBC(LS, Constant(0.0), bottom_boundary)
+bc_top = DirichletBC(LS, Constant(0.0), top_boundary)
+bc_left = DirichletBC(LS, Constant(0.0), left_boundary)
+bc_right = DirichletBC(LS, Constant(0.0), right_boundary)
 
 # boundary conds
 # velocity
@@ -173,26 +173,40 @@ bottom = DirichletBC(P, patm, bottom_boundary)
 top = DirichletBC(P, patm, top_boundary)
 
 # merge bcs
-bcu = [DirichletBC(U, Constant((0.0, 0.0)), left_inlet_boundary), DirichletBC(U, Constant((0.0, 0.0)), right_inlet_boundary), 
-       DirichletBC(U.sub(1), 0.0, top_boundary), DirichletBC(U, Constant((0.0, -0.1)), top_inlet_boundary),
-       DirichletBC(U.sub(0), Constant(0.0), left_boundary), DirichletBC(U.sub(0), Constant(0.0), right_boundary)]
-bcp = [DirichletBC(P, 0.0, bottom_boundary)]
+bcu = [
+       DirichletBC(U.sub(0), Constant(0.0), left_inlet_boundary), 
+       DirichletBC(U.sub(0), Constant(0.0), right_inlet_boundary),
+       DirichletBC(U, Constant((0.0, -0.1)), top_inlet_boundary),
+       DirichletBC(U.sub(1), Constant(-0.1), top_boundary), 
+       #DirichletBC(U, Constant((0.0, -0.1)), bottom_boundary),
+       #freeslipbottom,
+       #DirichletBC(U, Constant((-0.1, 0.0)), left_boundary),
+       #DirichletBC(U, Constant((0.1, 0.0)), right_boundary),
+       freeslipleft, 
+       freeslipright
+       ]
+bcp = [
+       DirichletBC(P, 0.0, bottom_boundary)
+      ]
 
-radius = 0.4
+radius = 0.5
 initx = 0.5
-inity = 2.4
-phiinit = Expression(
-    "1/( 1+exp((sqrt(2.0*(x[0]-{0})*(x[0]-{0})+(x[1]-{1})*(x[1]-{1}))-{2})/{3}))".format(initx, inity, radius, eps))
-ls0.assign(project(phiinit, LS))
-
-# LS init
-ls0, n = advsolver.advsolve(mesh, LS, N, d_ref, u0, ls0, _dtau=dtau, _eps=eps,
-                            _dt=dt, _t_end=dt, _bcs=[],
-                            _adv_scheme="implicit_euler")
+inity = 2.5
+#phiinit = Expression(
+#    "1/( 1+exp((sqrt((x[0]-{0})*(x[0]-{0})+(x[1]-{1})*(x[1]-{1}))-{2})/{3}))".format(initx, inity, radius, eps))
+phiinit = 0.0
+ls0.assign(interpolate(Expression("1/(1+exp(-(x[1]-2.1)/{}))".format(eps)), LS))
+plot(ls0, key="ls init", title="Init level-set", interactive=True)
 
 # vel init
 u0_init = Constant((0.0, 0.0))
 u0.assign(project(u0_init, U))
+
+# LS init
+ls0, n = advsolver.advsolve(mesh, LS, N, d_ref, u0, ls0, _dtau=dtau, _eps=eps,
+                            _dt=dt, _t_end=dt, _bcs=[bc_bottom, bc_left, bc_right, bc_top],
+                            _adv_scheme="implicit_euler")
+
 
 # pressure init
 #pinit1 = Constant(0.0)
@@ -209,15 +223,17 @@ while t < T + DOLFIN_EPS:
 
     # advance LS
     ls1, n = advsolver.advsolve(mesh, LS, N, d_ref, u0, ls0,
-                                _dtau=dtau, _eps=eps, 
-                                _dt=dt, _t_end=dt, _bcs=[DirichletBC(LS, 1.0, top_inlet_boundary)],
-                                _adv_scheme="implicit_euler")
+                                _dtau=dtau, _eps=eps, _break_norm=0.001, 
+                                _dt=dt, _t_end=dt, _bcs=[DirichletBC(LS, 1.0, top_inlet_boundary), bc_bottom, bc_left, bc_right],
+                                _adv_scheme="crank_nicholson")
+
+    #ls0 = ls1
 
     Ttens = (Identity(2) - outer(n, n)) * sqrt(pow(0.00001, 2) + dot(grad(ls1), grad(ls1)))
     #plot(div(Ttens), key="normal")
     ### Olsson 2007
     # tentative velocity
-    f = 1.0*pow(1.0 / froude, 2) * rho(ls1) * Constant((0, -1.0))*ls1
+    #f = 1.0*pow(1.0 / froude, 2) * rho(ls1) * Constant((0, -1.0))
     #F1 = (1.0 / dt_) * inner(rho(ls1) * u - rho(ls0) * u0, u_t) * dx \
     #     - inner(dot(grad(u_t), u0), rho(ls1) * u) * dx \
     #     - div(u_t)*p0 * dx \
@@ -336,6 +352,12 @@ while t < T + DOLFIN_EPS:
     
     u1, p1 = nssolver.nssolve(mesh, P, U, ls0, ls1, "olsson", froude, reynolds, weber,
                               rho2, rho1, nu2, nu1, sigma, u0, p0, n, dt_, bcu, bcp)		
+    #ls1, n = advsolver.advsolve(mesh, LS, N, d_ref, u1, ls1,
+    #                            _dtau=dtau, _eps=eps,
+    #                            _dt=1.0*dt, _t_end=dt, _bcs=[DirichletBC(LS, 1.0, top_inlet_boundary), bc_bottom, bc_left, bc_right, bc_top,
+    #                                                         DirichletBC(LS, 1.0, left_inlet_boundary), DirichletBC(LS, 1.0, right_inlet_boundary)],
+    #                            _adv_scheme="implicit_euler")
+
 
     ### Guermond 2008 END
 
@@ -351,6 +373,7 @@ while t < T + DOLFIN_EPS:
     ufile << u1
 
     u0.assign(u1)
+    #u0.assign(project(u1*ls1, U))
     p0.assign(p1)
     ls0.assign(ls1)
     psi0.assign(psi1)

@@ -8,7 +8,15 @@ conserves volume of fluid. This improvement is important if we would like to ana
 \section{Mathematical formulation}
 
 \par Let say, $\Omega \subset \mbb R^n$. We choose a domain $\Omega_1 \subset \Omega$ that represents one fluid phase. Let then $\Omega_2 = \Omega - \Omega_1$.
-Let $\Omega_1$ 
+We define the interface between two phases as
+$$ \Gamma = {\mb x ::~ \mb x \in \partial \Omega}. $$
+
+\par General idea of LSM is to introduce function $\phi:~\Omega \mapsto \mbb R $ so that the interface is being the implicit hypersurface
+$$ \Gamma = {\mb x ::~ \phi(\mb x) = 0}. $$
+The name level-set is derived from the fact, that surface is represented with the zero-level plane cross section of some hypersurface.
+
+\par Standart level-set function, often refered as \textit{distance level-set} function is defined such that
+$$ \phi(\mb x) = \mathrm{Ind}(\mb x) \min () $$ 
 
 \section{Level-set advection}
 \section{Conservation of mass, reinitialization}

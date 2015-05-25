@@ -76,8 +76,8 @@ def advsolve(_mesh, _ls_space, _normal_space, _size_ref, _v, _init_ls,
     asbilinform = assemble(bilinform)
 
     # advection time step
-    t = _dt
-    while t <= _t_end:
+    t = 0.0 
+    while t < _t_end:
         print "Computing advection at t = {}s...".format(t)
 
         aslinform = assemble(linform)
