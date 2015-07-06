@@ -1,0 +1,15 @@
+# Fdb version 3
+["dvips"] 0 "preface.dvi" "preface.ps" "preface" 0
+  "preface.dvi" 0 -1 0 "latex"
+  (generated)
+  "preface.ps"
+["latex"] 1432312396 "preface.tex" "preface.dvi" "preface" 1432312396
+  "/etc/texmf/web2c/texmf.cnf" 1431467995 475 c0e671620eb5563b2130f56340a5fde8 ""
+  "/usr/share/texlive/texmf-dist/web2c/texmf.cnf" 1392645748 31083 1dfd8bf685ce0009c40532fedf8a7c53 ""
+  "/usr/share/texmf/web2c/texmf.cnf" 1392645748 31083 1dfd8bf685ce0009c40532fedf8a7c53 ""
+  "/var/lib/texmf/web2c/pdftex/latex.fmt" 1431468006 722273 b248c81a1bcb18ab6131b9507b03c694 ""
+  "preface.aux" 1432310176 701 5d7d4de188563ff5486a9c1217a4d5ce ""
+  "preface.tex" 1431864640 2466 828ec2a6a203b983b28d99e6820a4689 ""
+  (generated)
+  "preface.dvi"
+  "preface.log"

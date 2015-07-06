@@ -46,7 +46,7 @@ def nssolve(_mesh, _P, _U, _ls0, _ls1, _method, _froude, _reynolds,
         print "--Olsson-- method chosen for Navier-Stokes solver"
 
         # tentative velocity
-        f = _ls1*pow(1.0 / _froude, 2) * rho(_ls1) * Constant((0, -1.0))
+        f = pow(1.0 / _froude, 2) * rho(_ls1) * Constant((0, -1.0))
         F1 = (1.0 / _dt) * inner(rho(_ls1) * u - rho(_ls0) * _u0, u_t) * dx \
              - inner(dot(grad(u_t), _u0), rho(_ls1) * u) * dx \
              - div(u_t)*_p0 * dx \

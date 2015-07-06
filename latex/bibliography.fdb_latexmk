@@ -1,0 +1,15 @@
+# Fdb version 3
+["dvips"] 0 "bibliography.dvi" "bibliography.ps" "bibliography" 0
+  "bibliography.dvi" 0 -1 0 "latex"
+  (generated)
+  "bibliography.ps"
+["latex"] 1432312387 "bibliography.tex" "bibliography.dvi" "bibliography" 1432312390
+  "/etc/texmf/web2c/texmf.cnf" 1431467995 475 c0e671620eb5563b2130f56340a5fde8 ""
+  "/usr/share/texlive/texmf-dist/web2c/texmf.cnf" 1392645748 31083 1dfd8bf685ce0009c40532fedf8a7c53 ""
+  "/usr/share/texmf/web2c/texmf.cnf" 1392645748 31083 1dfd8bf685ce0009c40532fedf8a7c53 ""
+  "/var/lib/texmf/web2c/pdftex/latex.fmt" 1431468006 722273 b248c81a1bcb18ab6131b9507b03c694 ""
+  "bibliography.aux" 1432310177 709 5cc510c1604d1ca18b0fc2bc6fef66fd ""
+  "bibliography.tex" 1323084436 584 e4c388eec2fb7bb4883a0fe4815e90df ""
+  (generated)
+  "bibliography.log"
+  "bibliography.dvi"

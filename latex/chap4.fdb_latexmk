@@ -1,0 +1,15 @@
+# Fdb version 3
+["dvips"] 0 "chap4.dvi" "chap4.ps" "chap4" 0
+  "chap4.dvi" 0 -1 0 "latex"
+  (generated)
+  "chap4.ps"
+["latex"] 1432312395 "chap4.tex" "chap4.dvi" "chap4" 1432312395
+  "/etc/texmf/web2c/texmf.cnf" 1431467995 475 c0e671620eb5563b2130f56340a5fde8 ""
+  "/usr/share/texlive/texmf-dist/web2c/texmf.cnf" 1392645748 31083 1dfd8bf685ce0009c40532fedf8a7c53 ""
+  "/usr/share/texmf/web2c/texmf.cnf" 1392645748 31083 1dfd8bf685ce0009c40532fedf8a7c53 ""
+  "/var/lib/texmf/web2c/pdftex/latex.fmt" 1431468006 722273 b248c81a1bcb18ab6131b9507b03c694 ""
+  "chap4.aux" 1432310177 1009 9f6afe46701f547fc76668e0877b5593 ""
+  "chap4.tex" 1431779154 110 00d4795293f95aa660f9e9733572141d ""
+  (generated)
+  "chap4.dvi"
+  "chap4.log"

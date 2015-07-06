@@ -98,13 +98,13 @@ def advsolve(_mesh, _ls_space, _normal_space, _size_ref, _v, _init_ls,
 
             f = get_reinit_forms(phireinit, phi_t, phires, _reinit_scheme, _dtau, _eps, n)
 
-            solve(f == 0, phireinit, bcs=[],
+            solve(f == 0, phireinit, bcs=_bcs_reinit,
                   solver_parameters={"newton_solver": {'linear_solver': 'gmres', "preconditioner": "default"}},
                   form_compiler_parameters={"optimize": True})
 
             phires.assign(phireinit)
             tau += _dtau
-
+            #plot(phireinit)
             if norm(assemble(f), "L2") < _break_norm:
                 print "Reinitialization computation time: {:.3f}s".format(time.time() - startreinit)
                 break
